@@ -13,8 +13,12 @@ Run with:
 
 import os
 import uuid
+from functools import partial
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import threading
+import time
 
 import pytest
 
@@ -99,11 +103,14 @@ class TestEnvLoading:
         assert len(real_api_key) > 10
 
     def test_app_base_url_has_default(self):
-        """APP_BASE_URL defaults to localhost:8080 when not set."""
+        """APP_BASE_URL defaults to localhost:8001 when not set."""
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("APP_BASE_URL", None)
-            default = os.getenv("APP_BASE_URL", "http://localhost:8080")
-            assert default == "http://localhost:8080"
+            os.environ.pop("AUDIO_SERVER_PORT", None)
+            # Default mirrors audio_tools.py: http://localhost:{AUDIO_SERVER_PORT}
+            port = int(os.getenv("AUDIO_SERVER_PORT", "8001"))
+            default = os.getenv("APP_BASE_URL", f"http://localhost:{port}")
+            assert default == "http://localhost:8001"
 
 
 # ===================================================================
@@ -260,29 +267,29 @@ class TestFileSave:
 
 
 class TestURLConstruction:
-    """Verify audio URLs are built correctly for the frontend."""
+    """Verify audio URLs are built correctly for the background file server."""
 
     def test_url_format_default_base(self):
-        """URL uses default localhost base when APP_BASE_URL not set."""
-        base = "http://localhost:8080"
+        """URL uses default localhost:8001 base (background file server)."""
+        base = "http://localhost:8001"
         filename = "chapter_1_abc123def456.mp3"
-        url = f"{base}/audio/{filename}"
+        url = f"{base}/{filename}"
 
-        assert url == "http://localhost:8080/audio/chapter_1_abc123def456.mp3"
+        assert url == "http://localhost:8001/chapter_1_abc123def456.mp3"
 
     def test_url_format_custom_base(self):
         """URL uses custom base for production deployment."""
         base = "https://myapp.example.com"
         filename = "chapter_2_abc123def456.mp3"
-        url = f"{base}/audio/{filename}"
+        url = f"{base}/{filename}"
 
-        assert url == "https://myapp.example.com/audio/chapter_2_abc123def456.mp3"
+        assert url == "https://myapp.example.com/chapter_2_abc123def456.mp3"
 
     def test_url_no_double_slash(self):
-        """No double-slash between base and /audio/ even if base has trailing slash."""
-        base = "http://localhost:8080"
+        """No double-slash between base and filename."""
+        base = "http://localhost:8001"
         filename = "chapter_1_test.mp3"
-        url = f"{base}/audio/{filename}"
+        url = f"{base}/{filename}"
 
         assert "//" not in url.split("://")[1]
 
@@ -297,89 +304,60 @@ class TestURLConstruction:
 
 
 # ===================================================================
-# 5. STATIC FILE SERVING TESTS (persistent dir)
+# 5. BACKGROUND FILE SERVER TESTS
 # ===================================================================
 
 
-class TestStaticFileServing:
-    """Verify FastAPI serves saved audio files at /audio/{filename}."""
+class TestBackgroundFileServer:
+    """Verify the background HTTP file server serves audio files correctly."""
 
-    @pytest.mark.asyncio
-    async def test_audio_endpoint_serves_saved_file(self, real_api_key):
-        """Generate audio, save to persistent dir, serve via FastAPI, download and verify."""
-        import aiofiles
-        from elevenlabs import AsyncElevenLabs, VoiceSettings
-        from fastapi import FastAPI
-        from fastapi.staticfiles import StaticFiles
-        from fastapi.testclient import TestClient
+    def test_background_server_serves_file(self):
+        """Start a background HTTP server and verify it serves a test file."""
+        # Write a test file
+        test_file = TEST_AUDIO_DIR / f"test_bg_serve_{uuid.uuid4().hex[:8]}.mp3"
+        test_data = b"\xff\xfb" + os.urandom(512)
+        test_file.write_bytes(test_data)
 
-        # Generate real audio and save to the persistent test dir
-        client = AsyncElevenLabs(api_key=real_api_key)
-        audio_stream = client.text_to_speech.convert(
-            voice_id="21m00Tcm4TlvDq8ikWAM",
-            text="The moon smiled down at the sleeping forest.",
-            model_id="eleven_multilingual_v2",
-            output_format="mp3_44100_128",
-            voice_settings=VoiceSettings(
-                stability=0.85,
-                similarity_boost=0.78,
-                style=0.15,
-                speed=0.85,
-            ),
-        )
-        chunks = []
-        async for chunk in audio_stream:
-            chunks.append(chunk)
-        audio_bytes = b"".join(chunks)
+        # Start a test server on a random high port
+        handler = partial(SimpleHTTPRequestHandler, directory=str(TEST_AUDIO_DIR))
+        server = HTTPServer(("127.0.0.1", 0), handler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
 
-        filename = f"test_serve_{uuid.uuid4().hex[:8]}.mp3"
-        filepath = TEST_AUDIO_DIR / filename
+        try:
+            time.sleep(0.3)
+            import urllib.request
+            resp = urllib.request.urlopen(
+                f"http://127.0.0.1:{port}/{test_file.name}"
+            )
+            data = resp.read()
 
-        async with aiofiles.open(filepath, "wb") as f:
-            await f.write(audio_bytes)
+            assert resp.status == 200
+            assert data == test_data
+            assert resp.headers["Content-Type"] == "audio/mpeg"
+        finally:
+            server.shutdown()
 
-        # Mount the persistent dir via FastAPI and verify it serves the file
-        app = FastAPI()
-        app.mount(
-            "/audio",
-            StaticFiles(directory=str(TEST_AUDIO_DIR)),
-            name="audio",
-        )
+    def test_background_server_returns_404_for_missing(self):
+        """Background server returns 404 for non-existent files."""
+        handler = partial(SimpleHTTPRequestHandler, directory=str(TEST_AUDIO_DIR))
+        server = HTTPServer(("127.0.0.1", 0), handler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
 
-        test_client = TestClient(app)
-        response = test_client.get(f"/audio/{filename}")
-
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}"
-        )
-        assert response.headers["content-type"] in (
-            "audio/mpeg",
-            "audio/mp3",
-        ), f"Unexpected content-type: {response.headers['content-type']}"
-        assert len(response.content) == len(audio_bytes), (
-            "Served file size doesn't match saved file"
-        )
-        assert response.content == audio_bytes, (
-            "Served content doesn't match original audio"
-        )
-
-    def test_missing_audio_returns_404(self):
-        """Requesting a non-existent audio file returns 404."""
-        from fastapi import FastAPI
-        from fastapi.staticfiles import StaticFiles
-        from fastapi.testclient import TestClient
-
-        app = FastAPI()
-        app.mount(
-            "/audio",
-            StaticFiles(directory=str(TEST_AUDIO_DIR)),
-            name="audio",
-        )
-
-        test_client = TestClient(app)
-        response = test_client.get("/audio/nonexistent_file.mp3")
-
-        assert response.status_code == 404
+        try:
+            time.sleep(0.3)
+            import urllib.request
+            import urllib.error
+            with pytest.raises(urllib.error.HTTPError) as exc_info:
+                urllib.request.urlopen(
+                    f"http://127.0.0.1:{port}/nonexistent_file.mp3"
+                )
+            assert exc_info.value.code == 404
+        finally:
+            server.shutdown()
 
 
 # ===================================================================
@@ -406,7 +384,7 @@ class TestGenerateAudioTool:
 
         try:
             audio_tools.ELEVENLABS_API_KEY = real_api_key
-            audio_tools.APP_BASE_URL = "http://localhost:8080"
+            audio_tools.APP_BASE_URL = "http://localhost:8001"
 
             result = await audio_tools.generate_audio(
                 text=SAMPLE_TEXT,
@@ -423,8 +401,8 @@ class TestGenerateAudioTool:
             assert "filename" in result, f"Missing filename: {result}"
             assert result["chapter"] == 1
 
-            # Verify URL format
-            assert result["audio_url"].startswith("http://localhost:8080/audio/")
+            # Verify URL format — background server serves at root
+            assert result["audio_url"].startswith("http://localhost:8001/")
             assert result["audio_url"].endswith(".mp3")
 
             # Verify file was saved to the REAL persistent directory
@@ -453,13 +431,11 @@ class TestGenerateAudioTool:
             audio_tools.APP_BASE_URL = original_base
 
     @pytest.mark.asyncio
-    async def test_generate_audio_url_is_servable(
+    async def test_generate_audio_url_is_fetchable(
         self, real_api_key, mock_tool_context
     ):
-        """The audio_url returned by generate_audio is servable by FastAPI."""
-        from fastapi import FastAPI
-        from fastapi.staticfiles import StaticFiles
-        from fastapi.testclient import TestClient
+        """The audio_url returned by generate_audio is fetchable via HTTP."""
+        import urllib.request
         from storytelling_agent.tools import audio_tools
 
         original_key = audio_tools.ELEVENLABS_API_KEY
@@ -467,7 +443,8 @@ class TestGenerateAudioTool:
 
         try:
             audio_tools.ELEVENLABS_API_KEY = real_api_key
-            audio_tools.APP_BASE_URL = "http://testserver"
+            # Use the real default so the background server URL matches
+            audio_tools.APP_BASE_URL = f"http://localhost:{audio_tools.AUDIO_SERVER_PORT}"
 
             result = await audio_tools.generate_audio(
                 text="A little owl hooted softly in the moonlight.",
@@ -477,21 +454,14 @@ class TestGenerateAudioTool:
 
             assert result["status"] == "success", f"Tool failed: {result}"
 
-            # Mount the real output dir and verify file is served
-            app = FastAPI()
-            app.mount(
-                "/audio",
-                StaticFiles(directory=str(audio_tools.AUDIO_OUTPUT_DIR)),
-                name="audio",
-            )
-            test_client = TestClient(app)
+            # The background server should already be running (started by generate_audio)
+            time.sleep(0.5)
+            resp = urllib.request.urlopen(result["audio_url"])
+            data = resp.read()
 
-            url_path = f"/audio/{result['filename']}"
-            response = test_client.get(url_path)
-
-            assert response.status_code == 200
-            assert len(response.content) > 1000
-            assert response.headers["content-type"] in ("audio/mpeg", "audio/mp3")
+            assert resp.status == 200
+            assert len(data) > 1000
+            assert resp.headers["Content-Type"] == "audio/mpeg"
 
         finally:
             audio_tools.ELEVENLABS_API_KEY = original_key
@@ -594,10 +564,8 @@ class TestEndToEnd:
 
     @pytest.mark.asyncio
     async def test_full_pipeline_api_to_http(self, real_api_key):
-        """Generate audio, save to persistent dir, serve via FastAPI, download and verify."""
-        from fastapi import FastAPI
-        from fastapi.staticfiles import StaticFiles
-        from fastapi.testclient import TestClient
+        """Generate audio, save to persistent dir, fetch via background server."""
+        import urllib.request
         from storytelling_agent.tools import audio_tools
 
         original_key = audio_tools.ELEVENLABS_API_KEY
@@ -605,7 +573,7 @@ class TestEndToEnd:
 
         try:
             audio_tools.ELEVENLABS_API_KEY = real_api_key
-            audio_tools.APP_BASE_URL = "http://testserver"
+            audio_tools.APP_BASE_URL = f"http://localhost:{audio_tools.AUDIO_SERVER_PORT}"
 
             # Step 1: Call generate_audio with mock tool context
             mock_ctx = MagicMock()
@@ -628,24 +596,17 @@ class TestEndToEnd:
             saved_bytes = filepath.read_bytes()
             assert len(saved_bytes) > 1000
 
-            # Step 3: Serve via FastAPI and fetch over HTTP
-            app = FastAPI()
-            app.mount(
-                "/audio",
-                StaticFiles(directory=str(audio_tools.AUDIO_OUTPUT_DIR)),
-                name="audio",
-            )
-            test_client = TestClient(app)
+            # Step 3: Fetch via the background HTTP server
+            time.sleep(0.5)
+            resp = urllib.request.urlopen(result["audio_url"])
+            fetched_bytes = resp.read()
 
-            url_path = f"/audio/{result['filename']}"
-            response = test_client.get(url_path)
-
-            assert response.status_code == 200, (
-                f"HTTP {response.status_code} for {url_path}"
+            assert resp.status == 200, (
+                f"HTTP {resp.status} for {result['audio_url']}"
             )
-            assert len(response.content) == len(saved_bytes)
-            assert response.content == saved_bytes
-            assert response.headers["content-type"] in ("audio/mpeg", "audio/mp3")
+            assert len(fetched_bytes) == len(saved_bytes)
+            assert fetched_bytes == saved_bytes
+            assert resp.headers["Content-Type"] == "audio/mpeg"
 
             # Step 4: Verify file persists after test (not cleaned up)
             assert filepath.exists(), "File was removed — should be persistent!"

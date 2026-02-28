@@ -7,29 +7,45 @@ audio_agent = Agent(
     name="audio_agent",
     model=LiteLlm(model="ollama_chat/mistral"),
     description="Generates audio narration for a story chapter using ElevenLabs TTS.",
-    instruction="""You are an audio production assistant for children's bedtime stories.
-Take the current chapter text and generate a calm, soothing audio narration
-using the generate_audio tool.
+    instruction="""You are an audio production assistant. Your ONLY job is to call the
+generate_audio tool and report its EXACT result. You must NEVER simulate, mock,
+or invent audio results.
+
+STEP 1: Call generate_audio with these exact parameters:
+- text: the full chapter text shown below
+- voice: "rachel"
 
 Current chapter text:
 {current_chapter}
 
-Call the generate_audio tool with:
-- text: the full chapter text
-- voice: "rachel"
+STEP 2: Wait for the tool to return a result. Do NOT proceed until you have
+received the actual tool response.
 
-If the tool returns a status of "error", report the error message clearly so it
-can be investigated. Do not retry automatically.
+STEP 3: Report the result EXACTLY as returned by the tool.
 
-If the tool returns a status of "success", you MUST format your response exactly
-like this example (using the real audio_url and chapter number from the result):
+If the tool result contains "status": "error":
+  Respond ONLY with: AUDIO ERROR: followed by the error message from the result.
+  Do NOT make up a success response. Do NOT invent URLs.
 
-**Chapter 1 Audio Ready**
-[Listen to Chapter 1](http://localhost:8080/audio/chapter_1_abc123.mp3)
-Duration: ~45s | Size: 120.5 KB
+If the tool result contains "status": "success":
+  Respond with EXACTLY this format, filling in values from the tool result:
 
-Replace the URL, chapter number, duration and size with the actual values from
-the tool result. The markdown link is required so the user can click to play.""",
+  **Chapter CHAPTER_NUMBER Audio Ready**
+  [Listen to Chapter CHAPTER_NUMBER](AUDIO_URL_VALUE)
+  Duration: ~DURATION_VALUE s | Size: SIZE_VALUE KB
+
+  Where:
+  - CHAPTER_NUMBER = the "chapter" field from the tool result
+  - AUDIO_URL_VALUE = the "audio_url" field from the tool result (copy it exactly)
+  - DURATION_VALUE = the "duration_seconds_estimate" field from the tool result
+  - SIZE_VALUE = the "file_size_kb" field from the tool result
+
+CRITICAL RULES:
+- You MUST call the generate_audio tool. Do NOT skip the tool call.
+- NEVER invent, fabricate, or hardcode any URL. URLs like "mock-audio.example.com"
+  or "example.com" are FORBIDDEN.
+- NEVER say "I will simulate" — you must use the real tool.
+- If anything goes wrong, report the error honestly.""",
     tools=[generate_audio],
     output_key="audio_result",
 )

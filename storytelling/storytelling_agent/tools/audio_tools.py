@@ -1,6 +1,16 @@
+"""ElevenLabs text-to-speech tool for generating story chapter narration.
+
+Converts chapter text into spoken audio using a soft, calm voice suitable
+for children's bedtime reading.  Fully async to avoid blocking the event
+loop during the API call and file write.
+
+Generated MP3 files are saved to ``storytelling/generated_audio/`` and
+served by the background HTTP file server (see :mod:`audio_server`).
+"""
+
+import logging
 import os
 import uuid
-import logging
 from pathlib import Path
 
 import aiofiles
@@ -9,35 +19,35 @@ from elevenlabs import AsyncElevenLabs, VoiceSettings
 from elevenlabs.core import ApiError
 from google.adk.tools import ToolContext
 
+from . import audio_server
+
 # Load .env relative to the storytelling/ project root (3 levels up from this file)
 _ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
 load_dotenv(_ENV_PATH)
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
 # ElevenLabs configuration
+# ---------------------------------------------------------------------------
+
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
 
-# Base URL for serving audio files to the frontend (no trailing slash)
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8080")
-
-# Rachel — calm, gentle female voice ideal for bedtime stories
+#: Rachel — calm, gentle female voice ideal for bedtime stories.
 DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
-# Voice settings tuned for soft, calm bedtime narration:
-#   - High stability (0.85): consistent, soothing tone without erratic changes
-#   - Moderate similarity (0.78): natural while staying close to the voice character
-#   - Low style exaggeration (0.15): gentle delivery, no dramatic shifts
-#   - Slower speed (0.85): relaxed pacing suitable for children falling asleep
+#: Voice settings tuned for soft, calm bedtime narration.
 VOICE_SETTINGS = VoiceSettings(
-    stability=0.85,
-    similarity_boost=0.78,
-    style=0.15,
-    speed=0.85,
+    stability=0.85,       # consistent, soothing tone
+    similarity_boost=0.78,  # natural while staying in character
+    style=0.15,           # gentle delivery, no dramatic shifts
+    speed=0.85,           # relaxed pacing for children falling asleep
 )
 
-# Output directory for generated audio files
-AUDIO_OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "generated_audio"
+# Re-export for tests that reference these via audio_tools
+AUDIO_OUTPUT_DIR = audio_server.AUDIO_OUTPUT_DIR
+AUDIO_SERVER_PORT = audio_server.AUDIO_SERVER_PORT
+APP_BASE_URL = audio_server.APP_BASE_URL
 
 
 def _ensure_output_dir() -> Path:
@@ -48,10 +58,6 @@ def _ensure_output_dir() -> Path:
 
 async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
     """Generate audio narration via ElevenLabs text-to-speech API.
-
-    Converts story chapter text into spoken audio using a soft, calm voice
-    suitable for children's bedtime reading. Fully async to avoid blocking
-    the event loop during the API call and file write.
 
     Args:
         text: The story text to convert to speech.
@@ -91,10 +97,12 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
             "chapter": chapter_number,
         }
 
+    # Ensure the background file server is running
+    audio_server.ensure_running()
+
     try:
         client = AsyncElevenLabs(api_key=ELEVENLABS_API_KEY)
 
-        # Call ElevenLabs TTS API (async)
         audio_stream = client.text_to_speech.convert(
             voice_id=DEFAULT_VOICE_ID,
             text=text,
@@ -103,7 +111,6 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
             voice_settings=VOICE_SETTINGS,
         )
 
-        # Collect audio bytes from the async generator
         chunks = []
         async for chunk in audio_stream:
             chunks.append(chunk)
@@ -119,7 +126,7 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
                 "chapter": chapter_number,
             }
 
-        # Save audio file to disk (async)
+        # Save audio file to disk
         output_dir = _ensure_output_dir()
         audio_id = uuid.uuid4().hex[:12]
         filename = f"chapter_{chapter_number}_{audio_id}.mp3"
@@ -138,7 +145,7 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
             file_size_kb,
         )
 
-        audio_url = f"{APP_BASE_URL}/audio/{filename}"
+        audio_url = f"{audio_server.APP_BASE_URL}/{filename}"
 
         result = {
             "status": "success",
