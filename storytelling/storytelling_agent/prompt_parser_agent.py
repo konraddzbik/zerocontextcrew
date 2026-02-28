@@ -5,7 +5,7 @@ from .tools.prompt_tools import save_prompt_settings
 
 prompt_parser_agent = Agent(
     name="prompt_parser_agent",
-    model=LiteLlm(model="ollama_chat/mistral"),
+    model=LiteLlm(model="mistral/mistral-large-latest"),
     description="Parses the user's story request and extracts settings.",
     instruction="""You are a prompt parser. Your ONLY job is to analyze the user's message and call the save_prompt_settings tool. Do NOT write a story. Do NOT add any creative content. Just parse and call the tool.
 

@@ -1,52 +1,122 @@
-from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
+"""Audio agent that calls ElevenLabs TTS directly — no LLM involved.
 
-from .tools.audio_tools import generate_audio
+This is a custom BaseAgent subclass.  When the ADK runner invokes it,
+``_run_async_impl`` reads the chapter text from session state, calls
+``generate_audio`` (which hits the real ElevenLabs API), and emits an
+Event with the result.  Because there is no LLM in the loop the tool
+is *always* called and results are never hallucinated.
+"""
 
-audio_agent = Agent(
+from __future__ import annotations
+
+import time
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING
+
+from google.adk.agents import BaseAgent
+from google.adk.events import Event, EventActions
+from google.genai import types as genai_types
+
+from .tools.audio_tools import generate_audio as _generate_audio
+
+if TYPE_CHECKING:
+    from google.adk.agents.invocation_context import InvocationContext
+
+
+class AudioAgent(BaseAgent):
+    """Deterministic agent that generates audio for the current chapter."""
+
+    # Pydantic model config — allow arbitrary types so ADK internals work.
+    model_config = {"arbitrary_types_allowed": True}
+
+    async def _run_async_impl(
+        self, ctx: InvocationContext
+    ) -> AsyncGenerator[Event, None]:
+        chapter_text: str = ctx.session.state.get("current_chapter", "")
+        chapter_number: int = ctx.session.state.get("chapter_number", 1)
+
+        if not chapter_text or not chapter_text.strip():
+            yield Event(
+                author=self.name,
+                invocation_id=ctx.invocation_id,
+                content=genai_types.Content(
+                    role="model",
+                    parts=[genai_types.Part(text="AUDIO SKIPPED: no chapter text available.")],
+                ),
+                actions=EventActions(state_delta={}),
+                timestamp=time.time(),
+            )
+            return
+
+        # Build a minimal mock ToolContext so generate_audio can read/write state.
+        tool_ctx = _ToolContextShim(ctx.session.state)
+
+        result = await _generate_audio(
+            text=chapter_text,
+            voice="rachel",
+            tool_context=tool_ctx,
+        )
+
+        # Propagate any state changes the tool made (all_audio_results, etc.)
+        state_delta: dict = {}
+        for key, value in tool_ctx.state_writes.items():
+            state_delta[key] = value
+
+        if result.get("status") == "success":
+            text_out = (
+                f"**Chapter {result['chapter']} Audio Ready**\n"
+                f"[Listen to Chapter {result['chapter']}]({result['audio_url']})\n"
+                f"Duration: ~{result.get('duration_seconds_estimate', '?')} s "
+                f"| Size: {result.get('file_size_kb', '?')} KB"
+            )
+            state_delta["audio_result"] = text_out
+        else:
+            text_out = f"AUDIO ERROR: {result.get('message', 'unknown error')}"
+            state_delta["audio_result"] = text_out
+
+        yield Event(
+            author=self.name,
+            invocation_id=ctx.invocation_id,
+            content=genai_types.Content(
+                role="model",
+                parts=[genai_types.Part(text=text_out)],
+            ),
+            actions=EventActions(state_delta=state_delta),
+            timestamp=time.time(),
+        )
+
+
+class _ToolContextShim:
+    """Minimal shim that satisfies what ``generate_audio`` expects from a ToolContext.
+
+    ``generate_audio`` calls ``tool_context.state.get(...)`` and
+    ``tool_context.state[...] = ...``.  This shim proxies reads to the
+    real session state and records writes so the caller can propagate them
+    as a ``state_delta``.
+    """
+
+    def __init__(self, session_state: dict):
+        self.state = _StateDictProxy(session_state)
+
+    @property
+    def state_writes(self) -> dict:
+        return self.state.writes
+
+
+class _StateDictProxy(dict):
+    """Dict-like wrapper that tracks mutations."""
+
+    def __init__(self, real_state: dict):
+        super().__init__(real_state)
+        self.writes: dict = {}
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self.writes[key] = value
+
+
+# The agent instance used by media_agent / chapter_agent.
+audio_agent = AudioAgent(
     name="audio_agent",
-    model=LiteLlm(model="ollama_chat/mistral"),
     description="Generates audio narration for a story chapter using ElevenLabs TTS.",
-    instruction="""You are an audio production assistant. Your ONLY job is to call the
-generate_audio tool and then format a response using the fields it returns.
-You must NEVER simulate, mock, or invent audio results.
-
-STEP 1: Call generate_audio with these parameters:
-- text: the full chapter text shown below
-- voice: "rachel"
-
-Current chapter text:
-{current_chapter}
-
-STEP 2: Wait for the tool to return a result. Do NOT proceed until you have
-received the actual tool response.
-
-STEP 3: Format your response using the fields from the tool result.
-
-If the tool result contains "status": "error":
-  Respond ONLY with: AUDIO ERROR: followed by the "message" field from the result.
-  Do NOT make up a success response. Do NOT invent URLs.
-
-If the tool result contains "status": "success":
-  Build a markdown response by inserting values from the tool result fields
-  into this template:
-
-  **Chapter CHAPTER_NUMBER Audio Ready**
-  [Listen to Chapter CHAPTER_NUMBER](AUDIO_URL_VALUE)
-  Duration: ~DURATION_VALUE s | Size: SIZE_VALUE KB
-
-  Replace the placeholders as follows:
-  - CHAPTER_NUMBER = the "chapter" field from the tool result
-  - AUDIO_URL_VALUE = the "audio_url" field from the tool result (copy it exactly)
-  - DURATION_VALUE = the "duration_seconds_estimate" field from the tool result
-  - SIZE_VALUE = the "file_size_kb" field from the tool result
-
-CRITICAL RULES:
-- You MUST call the generate_audio tool. Do NOT skip the tool call.
-- NEVER invent, fabricate, or hardcode any URL. URLs like "mock-audio.example.com"
-  or "example.com" are FORBIDDEN.
-- NEVER say "I will simulate" — you must use the real tool.
-- If anything goes wrong, report the error honestly.""",
-    tools=[generate_audio],
-    output_key="audio_result",
 )

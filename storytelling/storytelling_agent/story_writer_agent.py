@@ -21,7 +21,7 @@ def _init_story_state(callback_context: CallbackContext):
 
 story_writer_agent = Agent(
     name="story_writer_agent",
-    model=LiteLlm(model="ollama_chat/mistral"),
+    model=LiteLlm(model="mistral/mistral-large-latest"),
     description="Writes the next chapter of a children's story.",
     instruction="""You are a children's story writer. Your ONLY output should be the chapter text itself — pure story content, nothing else.
 
@@ -47,6 +47,5 @@ Rules:
 
 After writing the chapter, call the save_chapter tool with the full chapter text. Do NOT say anything after calling the tool.""",
     tools=[save_chapter],
-    output_key="current_chapter",
     before_agent_callback=_init_story_state,
 )
