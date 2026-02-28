@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ChoiceOption } from '../lib/types';
 
 interface ChoiceCardProps {
@@ -16,9 +17,20 @@ const lessonColors: Record<string, string> = {
 
 export default function ChoiceCard({ question, options, selectedId, onChoose }: ChoiceCardProps) {
   return (
-    <div className="bg-sun/10 rounded-2xl p-6 border-2 border-sun/30">
+    <motion.div
+      className="bg-sun/10 rounded-2xl p-6 border-2 border-sun/30"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-2xl">🤔</span>
+        <motion.span
+          className="text-2xl"
+          animate={{ rotate: [0, -10, 10, -5, 5, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+        >
+          🤔
+        </motion.span>
         <h3 className="font-display font-bold text-forest text-lg">{question}</h3>
       </div>
 
@@ -28,16 +40,20 @@ export default function ChoiceCard({ question, options, selectedId, onChoose }: 
           const tagStyle = lessonColors[opt.lessonTag] || 'bg-sky text-forest border-leaf/20';
 
           return (
-            <button
+            <motion.button
               key={opt.id}
               onClick={() => onChoose(opt)}
               disabled={!!selectedId}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+              whileHover={!selectedId ? { y: -2, scale: 1.01 } : {}}
+              whileTap={!selectedId ? { scale: 0.98 } : {}}
+              animate={isSelected ? { scale: [1, 1.02, 1] } : {}}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${
                 isSelected
                   ? 'border-sun bg-sun/20 shadow-md'
                   : selectedId
                     ? 'border-leaf/10 bg-white/50 opacity-60'
-                    : 'border-leaf/20 bg-white hover:border-leaf/40 hover:-translate-y-0.5 hover:shadow-sm cursor-pointer'
+                    : 'border-leaf/20 bg-white hover:border-leaf/40 hover:shadow-sm cursor-pointer'
               }`}
             >
               <div className="flex items-center justify-between gap-3">
@@ -46,15 +62,22 @@ export default function ChoiceCard({ question, options, selectedId, onChoose }: 
                   {opt.lessonTag}
                 </span>
               </div>
-              {isSelected && (
-                <p className="font-body text-sm text-bark/70 mt-2">
-                  {opt.consequence}
-                </p>
-              )}
-            </button>
+              <AnimatePresence>
+                {isSelected && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="font-body text-sm text-bark/70 mt-2"
+                  >
+                    {opt.consequence}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.button>
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }

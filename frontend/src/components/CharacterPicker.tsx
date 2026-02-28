@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+
 interface CharacterPickerProps {
   name: string;
   onNameChange: (name: string) => void;
@@ -55,18 +57,22 @@ export default function CharacterPicker({
         </label>
         <div className="grid grid-cols-2 gap-3">
           {characterTypes.map((ct) => (
-            <button
+            <motion.button
               key={ct.id}
               onClick={() => onTypeChange(ct.id)}
-              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              animate={selectedType === ct.id ? { scale: [1, 1.04, 1] } : {}}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
                 selectedType === ct.id
-                  ? 'border-leaf bg-sky shadow-md scale-[1.02]'
-                  : 'border-leaf/20 bg-white hover:border-leaf/40 hover:-translate-y-0.5'
+                  ? 'border-leaf bg-sky shadow-md'
+                  : 'border-leaf/20 bg-white hover:border-leaf/40'
               }`}
             >
               <span className="text-3xl">{ct.emoji}</span>
               <span className="font-body font-semibold text-forest">{ct.label}</span>
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -78,18 +84,22 @@ export default function CharacterPicker({
         </label>
         <div className="grid grid-cols-3 gap-3">
           {companions.map((c) => (
-            <button
+            <motion.button
               key={c.id}
               onClick={() => onCompanionChange(c.id)}
-              className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all cursor-pointer ${
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.94 }}
+              animate={companion === c.id ? { scale: [1, 1.06, 1] } : {}}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-colors ${
                 companion === c.id
-                  ? 'border-leaf bg-sky shadow-md scale-[1.02]'
-                  : 'border-leaf/20 bg-white hover:border-leaf/40 hover:-translate-y-0.5'
+                  ? 'border-leaf bg-sky shadow-md'
+                  : 'border-leaf/20 bg-white hover:border-leaf/40'
               }`}
             >
               <span className="text-2xl">{c.emoji}</span>
               <span className="font-body text-sm font-medium text-forest">{c.label}</span>
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
