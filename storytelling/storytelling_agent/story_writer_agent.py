@@ -6,26 +6,28 @@ from .tools.story_tools import save_chapter
 
 
 def _init_story_state(callback_context: CallbackContext):
-    """Initialize story state variables with defaults on the first iteration."""
-    if not callback_context.state.get("story_so_far"):
+    """Initialize story state variables with defaults on the first iteration.
+
+    Uses ``not in`` instead of ``not state.get(...)`` to avoid falsy-value bugs:
+    ``not 0`` is True, which would reset chapter_number every iteration.
+    """
+    if "story_so_far" not in callback_context.state:
         callback_context.state["story_so_far"] = "(No story written yet)"
-    if not callback_context.state.get("chapter_number"):
+    if "chapter_number" not in callback_context.state:
         callback_context.state["chapter_number"] = 0
-    if not callback_context.state.get("language"):
+    if "language" not in callback_context.state:
         callback_context.state["language"] = "English"
-    if not callback_context.state.get("total_chapters"):
+    if "total_chapters" not in callback_context.state:
         callback_context.state["total_chapters"] = 3
-    if not callback_context.state.get("current_chapter"):
+    if "current_chapter" not in callback_context.state:
         callback_context.state["current_chapter"] = ""
 
 
 story_writer_agent = Agent(
     name="story_writer_agent",
-    model=LiteLlm(model="ollama_chat/mistral"),
+    model=LiteLlm(model="mistral/mistral-large-latest"),
     description="Writes the next chapter of a children's story.",
-    instruction="""You are a children's story writer. Your ONLY output should be the chapter text itself — pure story content, nothing else.
-
-IMPORTANT: Do NOT describe what you are doing, do NOT mention tools, do NOT add meta-commentary. Only output the story chapter text.
+    instruction="""You are a children's story writer.
 
 Use the user's message in the conversation as the story request.
 
@@ -38,15 +40,22 @@ Current chapter number: {chapter_number}
 Total chapters planned: {total_chapters}
 
 Rules:
+- Write EXACTLY ONE chapter per invocation. Do NOT write multiple chapters.
 - If there is no story so far, write the opening chapter that introduces characters and setting.
 - If there is existing story, continue naturally from where it left off.
 - Each chapter should be 200-400 words, vivid and engaging for children aged 5-10.
 - Use simple language, colorful descriptions, and a sense of wonder.
-- If this is NOT the final chapter, end with a mini cliffhanger or transition that leads into the next chapter.
-- If this IS the final chapter (chapter_number equals total_chapters), wrap up the story with a satisfying conclusion.
+- Keep the story safe and positive — no violence, battles, evil characters, or dark themes.
+- If this is NOT the final chapter, end with a mini cliffhanger or transition.
+- If this IS the final chapter (chapter_number equals total_chapters), wrap up with a satisfying conclusion.
 
-After writing the chapter, call the save_chapter tool with the full chapter text. Do NOT say anything after calling the tool.""",
+After writing the chapter, you MUST call save_chapter with ALL of these arguments:
+- chapter_text: the full chapter text you wrote
+- scene_description: ALWAYS IN ENGLISH, regardless of story language. A SHORT (1-2 sentences) visual description of the main scene for an illustrator. Describe what should be DRAWN — setting, character positions, key visual elements. Example: "A small white bunny stands at the entrance of a glowing crystal cave, surrounded by colorful butterflies."
+- characters: a list of the MAIN characters in this chapter (max 4), each with "name" and "role". The "role" MUST be a SHORT English word describing what the character IS (species or type), NOT a description. Example: [{"name": "Luna", "role": "bunny"}, {"name": "Max", "role": "fox"}]. Good roles: "dog", "cat", "puppy", "boy", "girl", "wizard". Bad roles: "a brave young fox who loves adventure" — too long!
+- emotion: the dominant mood — one of: happy, sad, excited, scared, curious, calm, mysterious, funny, adventurous
+
+Do NOT say anything after calling the tool. STOP immediately.""",
     tools=[save_chapter],
-    output_key="current_chapter",
     before_agent_callback=_init_story_state,
 )
