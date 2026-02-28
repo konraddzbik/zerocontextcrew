@@ -2,6 +2,9 @@
 .env
 .adk
 
+# Generated assets
+generated_audio/
+
 # Python
 __pycache__/
 *.py[cod]
