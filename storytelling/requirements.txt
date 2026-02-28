@@ -1,0 +1,4 @@
+google-adk[extensions]~=1.26.0
+fastapi
+litellm
+uvicorn
