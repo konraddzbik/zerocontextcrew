@@ -11,7 +11,7 @@ chapter_agent = SequentialAgent(
 
 root_agent = LoopAgent(
     name="storytelling_loop",
-    description="Generates a multi-chapter children's story with audio and illustrations.",
+    description="Generates a two-chapter children's story with audio and illustrations.",
     sub_agents=[chapter_agent],
-    max_iterations=3,
+    max_iterations=2,
 )

@@ -3,17 +3,23 @@ import uuid
 import logging
 from pathlib import Path
 
+import aiofiles
 from dotenv import load_dotenv
-from elevenlabs import ElevenLabs
+from elevenlabs import AsyncElevenLabs, VoiceSettings
 from elevenlabs.core import ApiError
 from google.adk.tools import ToolContext
 
-load_dotenv()
+# Load .env relative to the storytelling/ project root (3 levels up from this file)
+_ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(_ENV_PATH)
 
 logger = logging.getLogger(__name__)
 
 # ElevenLabs configuration
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+
+# Base URL for serving audio files to the frontend (no trailing slash)
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8080")
 
 # Rachel — calm, gentle female voice ideal for bedtime stories
 DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
@@ -23,12 +29,12 @@ DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 #   - Moderate similarity (0.78): natural while staying close to the voice character
 #   - Low style exaggeration (0.15): gentle delivery, no dramatic shifts
 #   - Slower speed (0.85): relaxed pacing suitable for children falling asleep
-VOICE_SETTINGS = {
-    "stability": 0.85,
-    "similarity_boost": 0.78,
-    "style": 0.15,
-    "speed": 0.85,
-}
+VOICE_SETTINGS = VoiceSettings(
+    stability=0.85,
+    similarity_boost=0.78,
+    style=0.15,
+    speed=0.85,
+)
 
 # Output directory for generated audio files
 AUDIO_OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "generated_audio"
@@ -40,11 +46,12 @@ def _ensure_output_dir() -> Path:
     return AUDIO_OUTPUT_DIR
 
 
-def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
+async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
     """Generate audio narration via ElevenLabs text-to-speech API.
 
     Converts story chapter text into spoken audio using a soft, calm voice
-    suitable for children's bedtime reading.
+    suitable for children's bedtime reading. Fully async to avoid blocking
+    the event loop during the API call and file write.
 
     Args:
         text: The story text to convert to speech.
@@ -85,10 +92,10 @@ def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
         }
 
     try:
-        client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+        client = AsyncElevenLabs(api_key=ELEVENLABS_API_KEY)
 
-        # Call ElevenLabs TTS API
-        audio_iterator = client.text_to_speech.convert(
+        # Call ElevenLabs TTS API (async)
+        audio_stream = client.text_to_speech.convert(
             voice_id=DEFAULT_VOICE_ID,
             text=text,
             model_id="eleven_multilingual_v2",
@@ -96,8 +103,11 @@ def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
             voice_settings=VOICE_SETTINGS,
         )
 
-        # Collect audio bytes from the response iterator
-        audio_bytes = b"".join(audio_iterator)
+        # Collect audio bytes from the async generator
+        chunks = []
+        async for chunk in audio_stream:
+            chunks.append(chunk)
+        audio_bytes = b"".join(chunks)
 
         if not audio_bytes:
             error_msg = "ElevenLabs returned empty audio data."
@@ -109,13 +119,14 @@ def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
                 "chapter": chapter_number,
             }
 
-        # Save audio file to disk
+        # Save audio file to disk (async)
         output_dir = _ensure_output_dir()
         audio_id = uuid.uuid4().hex[:12]
         filename = f"chapter_{chapter_number}_{audio_id}.mp3"
         filepath = output_dir / filename
 
-        filepath.write_bytes(audio_bytes)
+        async with aiofiles.open(filepath, "wb") as f:
+            await f.write(audio_bytes)
 
         file_size_kb = round(len(audio_bytes) / 1024, 1)
         estimated_duration = round(word_count / 2.5, 1)  # ~150 wpm
@@ -127,9 +138,12 @@ def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
             file_size_kb,
         )
 
+        audio_url = f"{APP_BASE_URL}/audio/{filename}"
+
         result = {
             "status": "success",
             "audio_id": audio_id,
+            "audio_url": audio_url,
             "audio_file": str(filepath),
             "filename": filename,
             "voice": voice,

@@ -32,8 +32,8 @@ Rules:
 - If there is existing story, continue naturally from where it left off.
 - Each chapter should be 200-400 words, vivid and engaging for children aged 5-10.
 - Use simple language, colorful descriptions, and a sense of wonder.
-- End each chapter with a mini cliffhanger or transition that leads into the next chapter.
-- On the final chapter (chapter 3), wrap up the story with a satisfying conclusion.
+- End the first chapter with a mini cliffhanger or transition that leads into the next chapter.
+- On the final chapter (chapter 2), wrap up the story with a satisfying conclusion.
 
 After writing the chapter, you MUST call the save_chapter tool with the full chapter text
 to persist it for the next iteration.""",

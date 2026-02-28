@@ -21,8 +21,15 @@ Call the generate_audio tool with:
 If the tool returns a status of "error", report the error message clearly so it
 can be investigated. Do not retry automatically.
 
-If the tool returns a status of "success", report the result including the file
-path and chapter number.""",
+If the tool returns a status of "success", you MUST format your response exactly
+like this example (using the real audio_url and chapter number from the result):
+
+**Chapter 1 Audio Ready**
+[Listen to Chapter 1](http://localhost:8080/audio/chapter_1_abc123.mp3)
+Duration: ~45s | Size: 120.5 KB
+
+Replace the URL, chapter number, duration and size with the actual values from
+the tool result. The markdown link is required so the user can click to play.""",
     tools=[generate_audio],
     output_key="audio_result",
 )
