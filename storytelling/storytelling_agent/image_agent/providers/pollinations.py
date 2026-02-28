@@ -36,6 +36,7 @@ class PollinationsProvider:
         width: int = 1024,
         height: int = 1024,
         seed: int | None = None,
+        **kwargs,
     ) -> ImageResult | None:
         # Build full prompt — style + characters + scene + safety
         parts = []
@@ -66,7 +67,7 @@ class PollinationsProvider:
         if seed is not None and isinstance(seed, int) and seed >= 0:
             url += f"&seed={seed}"
 
-        logger.info("Pollinations request: %s", url[:200])
+        logger.info("Pollinations request: prompt_len=%d, seed=%s", len(full_prompt), seed)
         start = time.monotonic()
 
         try:

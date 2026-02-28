@@ -51,8 +51,8 @@ Rules:
 
 After writing the chapter, you MUST call save_chapter with ALL of these arguments:
 - chapter_text: the full chapter text you wrote
-- scene_description: a SHORT (1-2 sentences) visual description of the main scene for an illustrator. Describe what should be DRAWN — setting, character positions, key visual elements. Example: "A small white bunny stands at the entrance of a glowing crystal cave, surrounded by colorful butterflies."
-- characters: a list of characters in this chapter, each with "name" and "role". Example: [{"name": "Luna", "role": "bunny"}, {"name": "Max", "role": "fox"}]
+- scene_description: ALWAYS IN ENGLISH, regardless of story language. A SHORT (1-2 sentences) visual description of the main scene for an illustrator. Describe what should be DRAWN — setting, character positions, key visual elements. Example: "A small white bunny stands at the entrance of a glowing crystal cave, surrounded by colorful butterflies."
+- characters: a list of the MAIN characters in this chapter (max 4), each with "name" and "role". The "role" MUST be a SHORT English word describing what the character IS (species or type), NOT a description. Example: [{"name": "Luna", "role": "bunny"}, {"name": "Max", "role": "fox"}]. Good roles: "dog", "cat", "puppy", "boy", "girl", "wizard". Bad roles: "a brave young fox who loves adventure" — too long!
 - emotion: the dominant mood — one of: happy, sad, excited, scared, curious, calm, mysterious, funny, adventurous
 
 Do NOT say anything after calling the tool. STOP immediately.""",

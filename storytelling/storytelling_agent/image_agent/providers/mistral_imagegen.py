@@ -24,21 +24,14 @@ class MistralImageGenProvider:
     """Mistral native Image Generation via Agents/Conversations API.
 
     Creates a persistent agent on first use (one per process lifetime).
-    Uses conversation persistence: the first image in a batch starts a new
-    conversation; subsequent images append to the same conversation_id.
-    This way Mistral's agent SEES previous illustrations and maintains
-    visual consistency (same art style, same character look).
+    Conversation state (conversation_id) is managed externally by the caller
+    and passed into generate(). This keeps the provider stateless w.r.t.
+    sessions, avoiding cross-story leakage in multi-session servers.
     """
 
     def __init__(self) -> None:
         self._client = None
         self._agent_id: str | None = None
-        self._conversation_id: str | None = None
-
-    def new_story(self) -> None:
-        """Reset conversation for a new story. Next generate() will start fresh."""
-        self._conversation_id = None
-        logger.info("Mistral conversation reset for new story")
 
     def _ensure_agent(self) -> None:
         """Lazy init: create Mistral client + agent on first use."""
@@ -78,9 +71,20 @@ class MistralImageGenProvider:
         style_context: str = "",
         character_context: str = "",
         emotion: str = "excited",
-        seed: int | None = None,
+        conversation_id: str | None = None,
         **kwargs,
     ) -> ImageResult | None:
+        """Generate an image via Mistral Agents/Conversations API.
+
+        Args:
+            conversation_id: If set, appends to an existing conversation so
+                the agent can see previous illustrations (cross-chapter consistency).
+                If None, starts a fresh conversation.
+
+        Note: ``seed`` is accepted via **kwargs for interface compatibility with
+        other providers but is not used — Mistral's image_generation tool does
+        not expose a seed parameter.
+        """
         if not MISTRAL_API_KEY:
             logger.warning("MISTRAL_API_KEY not set, skipping Mistral provider")
             return None
@@ -102,7 +106,7 @@ class MistralImageGenProvider:
         if style_context:
             parts.append(f"STYLE: {style_context}")
         parts.append(f"MOOD: {emotion}, safe for ages 3-8")
-        if self._conversation_id:
+        if conversation_id:
             parts.append(
                 "IMPORTANT: Use the EXACT SAME art style and character appearance "
                 "as the previous illustration(s) in this conversation. "
@@ -113,15 +117,15 @@ class MistralImageGenProvider:
 
         logger.info(
             "Mistral imagegen request (agent=%s, conversation=%s)",
-            self._agent_id, self._conversation_id or "NEW",
+            self._agent_id, conversation_id or "NEW",
         )
         start = time.monotonic()
 
         try:
-            if self._conversation_id:
+            if conversation_id:
                 # Continue existing conversation — agent sees previous images!
                 response = self._client.beta.conversations.append(
-                    conversation_id=self._conversation_id,
+                    conversation_id=conversation_id,
                     inputs=message,
                 )
             else:
@@ -130,8 +134,8 @@ class MistralImageGenProvider:
                     agent_id=self._agent_id,
                     inputs=message,
                 )
-                self._conversation_id = response.conversation_id
-                logger.info("New Mistral conversation: %s", self._conversation_id)
+                conversation_id = response.conversation_id
+                logger.info("New Mistral conversation: %s", conversation_id)
 
             elapsed_ms = int((time.monotonic() - start) * 1000)
 
@@ -170,6 +174,7 @@ class MistralImageGenProvider:
                 generation_time_ms=elapsed_ms,
                 prompt_used=message,
                 upsampled_prompt="(upsampled by Mistral internally)",
+                conversation_id=conversation_id,
             )
 
         except Exception:

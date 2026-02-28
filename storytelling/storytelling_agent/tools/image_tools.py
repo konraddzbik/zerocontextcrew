@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import logging
 import os
-import time
+import re
 import uuid
 from pathlib import Path
 
@@ -50,8 +51,9 @@ SAFE_DEFAULT_SCENE = "a peaceful meadow with gentle sunshine, colorful butterfli
 
 
 def _is_safe_prompt(text: str) -> bool:
-    """Check if text contains blocked words."""
-    words = set(text.lower().split())
+    """Check if text contains blocked words. Uses regex word boundaries to catch
+    words adjacent to punctuation (e.g. 'blood,' or 'knife.')."""
+    words = set(re.findall(r"[a-z]+", text.lower()))
     return not words.intersection(BLOCKED_WORDS)
 
 
@@ -96,7 +98,8 @@ TARGET_SIZE = (1024, 1024)
 def _normalize_image(image_path: str) -> str:
     """Normalize image to consistent size and PNG format.
 
-    Resizes to TARGET_SIZE, converts to RGB PNG. Returns path to normalized
+    Resizes to TARGET_SIZE and saves as PNG. RGB and RGBA are kept as-is;
+    other modes (P, L, etc.) are converted to RGB. Returns path to normalized
     file (may be same path if already correct, or new path if converted).
     Falls back to original path if PIL is not available or conversion fails.
     """
@@ -105,7 +108,7 @@ def _normalize_image(image_path: str) -> str:
 
         img = Image.open(image_path)
 
-        # Convert to RGB if needed (e.g., RGBA, P mode)
+        # Keep RGB/RGBA as-is; convert other modes (P, L, etc.) to RGB
         if img.mode not in ("RGB", "RGBA"):
             img = img.convert("RGB")
 
@@ -322,7 +325,7 @@ async def _generate_one_image(
     if style_data:
         style = StyleBible(**style_data)
     else:
-        story_theme = chapter_data.get("story_theme", "")
+        story_theme = state.get("story_theme", chapter_data.get("story_theme", ""))
         style = create_default_style_bible(story_theme)
         state["style_bible"] = style.model_dump()
 
@@ -359,20 +362,30 @@ async def _generate_one_image(
     logger.debug("Prompt: %s", scene_prompt)
     logger.debug("Character context: %s", character_context)
 
+    # Conversation_id for Mistral cross-chapter consistency (stored in state)
+    mistral_conversation_id = state.get("mistral_conversation_id")
+
     # Fallback chain: Mistral → Pollinations → Placeholder
     result: ImageResult | None = None
 
     for prov_name in FALLBACK_CHAIN:
         try:
             provider = _get_provider(prov_name)
-            result = provider.generate(
+            # Run synchronous provider.generate() in a thread to avoid blocking
+            # the event loop (providers do network I/O and file writes).
+            result = await asyncio.to_thread(
+                provider.generate,
                 prompt=scene_prompt,
                 style_context=style.style_prefix,
                 character_context=character_context,
                 emotion=emotion,
                 seed=main_seed,
+                conversation_id=mistral_conversation_id,
             )
             if result and result.status == "success":
+                # Persist conversation_id from Mistral for next chapter
+                if result.conversation_id:
+                    state["mistral_conversation_id"] = result.conversation_id
                 logger.info("Generated with %s in %dms", prov_name, result.generation_time_ms)
                 break
         except Exception:
@@ -482,15 +495,6 @@ async def generate_images(tool_context: ToolContext) -> dict:
         len(chapters_to_illustrate),
         [ch.get("chapter_number") for ch in chapters_to_illustrate],
     )
-
-    # Reset Mistral conversation so all images in this batch share context
-    # (agent sees previous illustrations → visual consistency)
-    try:
-        provider = _get_provider("mistral_imagegen")
-        if hasattr(provider, "new_story"):
-            provider.new_story()
-    except Exception:
-        pass  # provider may not be available
 
     # Generate image for each unillustrated chapter
     results = []

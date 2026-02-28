@@ -26,8 +26,14 @@ def save_chapter(
     Returns:
         Confirmation with the chapter number saved.
     """
-    total_chapters = tool_context.state.get("total_chapters", 3)
-    current_chapter_num = tool_context.state.get("chapter_number", 0)
+    try:
+        total_chapters = int(tool_context.state.get("total_chapters", 3))
+    except (TypeError, ValueError):
+        total_chapters = 3
+    try:
+        current_chapter_num = int(tool_context.state.get("chapter_number", 0))
+    except (TypeError, ValueError):
+        current_chapter_num = 0
 
     # Guard: prevent writing past the planned chapter count
     if current_chapter_num >= total_chapters:

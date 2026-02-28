@@ -17,3 +17,4 @@ class ImageResult:
     generation_time_ms: int = 0
     prompt_used: str = ""
     upsampled_prompt: str | None = None
+    conversation_id: str | None = None
