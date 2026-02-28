@@ -21,9 +21,18 @@ def save_chapter(chapter_text: str, tool_context: ToolContext) -> dict:
 
     tool_context.state["story_so_far"] = story_so_far
     tool_context.state["chapter_number"] = chapter_number
+    tool_context.state["current_chapter"] = chapter_text
+
+    total_chapters = tool_context.state.get("total_chapters", 3)
+    is_final = chapter_number >= total_chapters
+
+    if is_final:
+        tool_context.actions.escalate = True
 
     return {
         "status": "saved",
         "chapter_number": chapter_number,
+        "total_chapters": total_chapters,
+        "is_final_chapter": is_final,
         "total_story_length": len(story_so_far),
     }
