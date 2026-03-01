@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import CharacterPicker from '../components/CharacterPicker';
+import CompanionPicker from '../components/CompanionPicker';
 import WorldPicker from '../components/WorldPicker';
 import { PageTransition, StaggerList, StaggerItem } from '../components/motion';
 
@@ -38,12 +39,21 @@ export default function StoryPickerPage() {
           {/* Pickers */}
           <StaggerList className="space-y-8">
             <StaggerItem>
+              <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Hero</p>
               <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
                 <CharacterPicker
                   name={name}
                   onNameChange={setName}
                   selectedType={characterType}
                   onTypeChange={setCharacterType}
+                />
+              </div>
+            </StaggerItem>
+
+            <StaggerItem>
+              <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Companion</p>
+              <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                <CompanionPicker
                   companion={companion}
                   onCompanionChange={setCompanion}
                 />
@@ -51,11 +61,26 @@ export default function StoryPickerPage() {
             </StaggerItem>
 
             <StaggerItem>
+              <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your World</p>
               <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
                 <WorldPicker selected={world} onSelect={setWorld} />
               </div>
             </StaggerItem>
           </StaggerList>
+
+          {/* Preview of selections */}
+          {isReady && (
+            <motion.div
+              className="mt-8 bg-white rounded-2xl px-6 py-4 shadow-[0_4px_20px_var(--soft-shadow)] text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <p className="font-body text-lg text-bark/80">
+                <span className="font-semibold text-forest">{name}</span> the{' '}
+                {characterType} and their {companion} companion explore the {world}!
+              </p>
+            </motion.div>
+          )}
 
           {/* Create button */}
           <motion.div
@@ -75,23 +100,9 @@ export default function StoryPickerPage() {
                   : 'bg-sky text-bark/40 cursor-not-allowed'
               }`}
             >
-              {isReady ? 'Create My Story! 📖' : 'Choose all options to begin'}
+              {isReady ? 'Create My Story! 📖' : 'Pick everything first!'}
             </motion.button>
           </motion.div>
-
-          {/* Preview of selections */}
-          {isReady && (
-            <motion.div
-              className="mt-6 text-center font-body text-bark/70"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <p>
-                <span className="font-semibold text-forest">{name}</span> the{' '}
-                {characterType} and their {companion} companion explore the {world}!
-              </p>
-            </motion.div>
-          )}
         </div>
       </div>
     </PageTransition>
