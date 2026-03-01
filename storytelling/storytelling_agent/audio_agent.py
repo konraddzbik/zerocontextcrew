@@ -33,7 +33,6 @@ class AudioAgent(BaseAgent):
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
         raw_chapter = ctx.session.state.get("current_chapter", "")
-        chapter_number: int = ctx.session.state.get("chapter_number", 1)
 
         # current_chapter may be a dict (from save_chapter) or a plain string
         if isinstance(raw_chapter, dict):
