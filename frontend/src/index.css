@@ -11,24 +11,41 @@
   --water: #5b9bd5;
   --berry: #9b5de5;
   --bark: #6b4226;
+  --surface: #ffffff;
   --soft-shadow: rgba(26, 58, 42, 0.08);
 
   --font-display: 'Fraunces', serif;
   --font-body: 'DM Sans', sans-serif;
 }
 
+/* === Bedtime Mode Overrides === */
+[data-theme="bedtime"] {
+  --forest: #c8d6e5;
+  --leaf: #7b9bb5;
+  --sun: #d4a54a;
+  --sky: #1e2a3a;
+  --cream: #0f1623;
+  --coral: #c17a6a;
+  --water: #4a7a9b;
+  --berry: #8b6aad;
+  --bark: #a0b0c0;
+  --surface: #1a2636;
+  --soft-shadow: rgba(0, 0, 0, 0.25);
+}
+
 /* === Tailwind Theme === */
 @theme {
-  --color-forest: #1a3a2a;
-  --color-leaf: #4a7c59;
-  --color-sun: #f5c542;
-  --color-sky: #e8f0e8;
-  --color-cream: #faf8f2;
-  --color-coral: #e07a5f;
-  --color-water: #5b9bd5;
-  --color-berry: #9b5de5;
-  --color-bark: #6b4226;
-  --color-soft-shadow: rgba(26, 58, 42, 0.08);
+  --color-forest: var(--forest);
+  --color-leaf: var(--leaf);
+  --color-sun: var(--sun);
+  --color-sky: var(--sky);
+  --color-cream: var(--cream);
+  --color-coral: var(--coral);
+  --color-water: var(--water);
+  --color-berry: var(--berry);
+  --color-bark: var(--bark);
+  --color-surface: var(--surface);
+  --color-soft-shadow: var(--soft-shadow);
 
   --font-family-display: 'Fraunces', serif;
   --font-family-body: 'DM Sans', sans-serif;
@@ -45,6 +62,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 /* Subtle cross-hatch texture overlay */
@@ -56,6 +74,12 @@ body::before {
   z-index: 0;
   opacity: 0.02;
   background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%231a3a2a' fill-opacity='1'%3E%3Cpath d='M0 0h1v40H0zM20 0h1v40h-1zM0 0v1h40V0zM0 20v1h40v-1z'/%3E%3C/g%3E%3C/svg%3E");
+  transition: opacity 0.5s ease, background-image 0.5s ease;
+}
+
+[data-theme="bedtime"] body::before {
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c8d6e5' fill-opacity='1'%3E%3Cpath d='M0 0h1v40H0zM20 0h1v40h-1zM0 0v1h40V0zM0 20v1h40v-1z'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* Warm layered background gradients */
@@ -68,6 +92,13 @@ body::after {
   background:
     radial-gradient(ellipse at top left, rgba(74, 124, 89, 0.06), transparent 60%),
     radial-gradient(ellipse at bottom right, rgba(245, 197, 66, 0.06), transparent 60%);
+  transition: background 0.5s ease;
+}
+
+[data-theme="bedtime"] body::after {
+  background:
+    radial-gradient(ellipse at top left, rgba(123, 155, 181, 0.06), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(139, 106, 173, 0.08), transparent 60%);
 }
 
 #root {

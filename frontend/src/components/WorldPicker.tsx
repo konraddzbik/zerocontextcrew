@@ -11,7 +11,7 @@ const worlds = [
     emoji: '🌲',
     label: 'Enchanted Forest',
     description: 'Tall trees, glowing mushrooms, and hidden creatures',
-    colors: 'border-leaf/30 bg-gradient-to-br from-sky to-white',
+    colors: 'border-leaf/30 bg-gradient-to-br from-sky to-surface',
     selectedColors: 'border-leaf bg-gradient-to-br from-sky to-sky/60 shadow-lg',
   },
   {
@@ -19,7 +19,7 @@ const worlds = [
     emoji: '🌊',
     label: 'Deep Ocean',
     description: 'Coral reefs, friendly whales, and sunken treasures',
-    colors: 'border-water/30 bg-gradient-to-br from-water/10 to-white',
+    colors: 'border-water/30 bg-gradient-to-br from-water/10 to-surface',
     selectedColors: 'border-water bg-gradient-to-br from-water/20 to-water/10 shadow-lg',
   },
   {
@@ -27,7 +27,7 @@ const worlds = [
     emoji: '🏔️',
     label: 'Misty Mountains',
     description: 'Snowy peaks, secret caves, and soaring eagles',
-    colors: 'border-bark/20 bg-gradient-to-br from-cream to-white',
+    colors: 'border-bark/20 bg-gradient-to-br from-cream to-surface',
     selectedColors: 'border-bark bg-gradient-to-br from-bark/10 to-cream shadow-lg',
   },
   {
@@ -35,7 +35,7 @@ const worlds = [
     emoji: '❄️',
     label: 'Frozen Arctic',
     description: 'Northern lights, polar bears, and crystal ice caves',
-    colors: 'border-water/20 bg-gradient-to-br from-water/5 to-white',
+    colors: 'border-water/20 bg-gradient-to-br from-water/5 to-surface',
     selectedColors: 'border-water bg-gradient-to-br from-water/15 to-sky shadow-lg',
   },
 ];

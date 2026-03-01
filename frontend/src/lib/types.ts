@@ -5,6 +5,7 @@ export interface StoryRequest {
   world: 'forest' | 'ocean' | 'mountains' | 'arctic';
   ageRange: '4-6' | '6-8';
   customPrompt?: string;
+  bedtimeMode?: boolean;
 }
 
 export interface Story {

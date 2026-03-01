@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useBedtime } from './BedtimeContext';
 
 interface FreeformPickerProps {
   prompt: string;
@@ -22,6 +23,8 @@ export default function FreeformPicker({
   moods,
   onMoodsChange,
 }: FreeformPickerProps) {
+  const { isBedtime } = useBedtime();
+
   function toggleMood(id: string) {
     onMoodsChange(
       moods.includes(id) ? moods.filter((m) => m !== id) : [...moods, id],
@@ -32,10 +35,12 @@ export default function FreeformPicker({
     <div className="space-y-6">
       <div>
         <label className="block font-display text-lg font-bold text-forest mb-2">
-          What story do you dream of?
+          {isBedtime ? 'What bedtime story do you dream of?' : 'What story do you dream of?'}
         </label>
         <textarea
-          placeholder="Once upon a time, in a land where trees could sing and rivers told stories..."
+          placeholder={isBedtime
+            ? 'Once upon a moonlit night, in a cozy forest where fireflies danced softly...'
+            : 'Once upon a time, in a land where trees could sing and rivers told stories...'}
           value={prompt}
           onChange={(e) => onPromptChange(e.target.value)}
           rows={5}
@@ -62,7 +67,7 @@ export default function FreeformPicker({
               className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-2 cursor-pointer transition-colors font-body text-sm font-medium ${
                 moods.includes(m.id)
                   ? 'border-leaf bg-sky text-forest shadow-sm'
-                  : 'border-leaf/20 bg-white text-forest/70 hover:border-leaf/40'
+                  : 'border-leaf/20 bg-surface text-forest/70 hover:border-leaf/40'
               }`}
             >
               <span>{m.emoji}</span>
