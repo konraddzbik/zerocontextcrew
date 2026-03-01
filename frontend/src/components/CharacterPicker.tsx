@@ -5,8 +5,6 @@ interface CharacterPickerProps {
   onNameChange: (name: string) => void;
   selectedType: string;
   onTypeChange: (type: string) => void;
-  companion: string;
-  onCompanionChange: (companion: string) => void;
 }
 
 const characterTypes = [
@@ -16,22 +14,11 @@ const characterTypes = [
   { id: 'creature', emoji: '🧚', label: 'Creature' },
 ];
 
-const companions = [
-  { id: 'fox', emoji: '🦊', label: 'Fox' },
-  { id: 'owl', emoji: '🦉', label: 'Owl' },
-  { id: 'turtle', emoji: '🐢', label: 'Turtle' },
-  { id: 'dolphin', emoji: '🐬', label: 'Dolphin' },
-  { id: 'rabbit', emoji: '🐰', label: 'Rabbit' },
-  { id: 'butterfly', emoji: '🦋', label: 'Butterfly' },
-];
-
 export default function CharacterPicker({
   name,
   onNameChange,
   selectedType,
   onTypeChange,
-  companion,
-  onCompanionChange,
 }: CharacterPickerProps) {
   return (
     <div className="space-y-6">
@@ -46,7 +33,7 @@ export default function CharacterPicker({
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
           maxLength={20}
-          className="w-full px-4 py-3 rounded-xl border-2 border-leaf/30 bg-white font-body text-lg text-forest placeholder-bark/30 focus:outline-none focus:border-leaf transition-colors"
+          className="w-full px-4 py-3 rounded-xl border-2 border-leaf/20 bg-cream font-body text-lg text-forest placeholder-bark/30 focus:outline-none focus:border-sun transition-colors"
         />
       </div>
 
@@ -77,32 +64,6 @@ export default function CharacterPicker({
         </div>
       </div>
 
-      {/* Companion */}
-      <div>
-        <label className="block font-display text-lg font-bold text-forest mb-2">
-          Pick a companion!
-        </label>
-        <div className="grid grid-cols-3 gap-3">
-          {companions.map((c) => (
-            <motion.button
-              key={c.id}
-              onClick={() => onCompanionChange(c.id)}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.94 }}
-              animate={companion === c.id ? { scale: [1, 1.06, 1] } : {}}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-colors ${
-                companion === c.id
-                  ? 'border-leaf bg-sky shadow-md'
-                  : 'border-leaf/20 bg-white hover:border-leaf/40'
-              }`}
-            >
-              <span className="text-2xl">{c.emoji}</span>
-              <span className="font-body text-sm font-medium text-forest">{c.label}</span>
-            </motion.button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
