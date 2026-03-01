@@ -35,7 +35,7 @@ def save_chapter(
     except (TypeError, ValueError):
         current_chapter_num = 0
 
-    # Guard: prevent writing past the planned chapter count
+    # Guard 1: prevent writing past the planned chapter count
     if current_chapter_num >= total_chapters:
         tool_context.actions.escalate = True
         return {
@@ -43,6 +43,27 @@ def save_chapter(
             "reason": f"Story is already complete ({current_chapter_num}/{total_chapters} chapters). STOP writing.",
             "instruction": "The story is FINISHED. Do NOT write more chapters. STOP now.",
         }
+
+    # Guard 2: prevent writing chapter N+1 before chapter N is illustrated.
+    # This enforces per-chapter iteration: story_writer writes ONE chapter,
+    # media_agent illustrates it, then the LoopAgent starts the next iteration.
+    # Without this, the LLM writes all chapters in a single turn (multiple
+    # tool calls) before media_agent ever runs.
+    if current_chapter_num > 0:
+        history: list = tool_context.state.get("illustration_history", [])
+        illustrated: set[int] = {entry["chapter"] for entry in history}
+        if current_chapter_num not in illustrated:
+            return {
+                "status": "rejected",
+                "reason": (
+                    f"Chapter {current_chapter_num} has not been illustrated yet. "
+                    "You must wait for illustration before writing the next chapter."
+                ),
+                "instruction": (
+                    "STOP writing. The previous chapter must be illustrated first. "
+                    "Do NOT call save_chapter again. STOP now."
+                ),
+            }
 
     chapter_number = current_chapter_num + 1
     story_so_far = tool_context.state.get("story_so_far", "")
@@ -70,11 +91,18 @@ def save_chapter(
 
     is_final = chapter_number >= total_chapters
 
+    # Only escalate on the FINAL chapter. This tells the LoopAgent to stop
+    # iterating. For non-final chapters, we let the loop continue so the next
+    # iteration writes the next chapter. The illustration guard (Guard 2 above)
+    # prevents the LLM from writing multiple chapters in a single turn.
     if is_final:
         tool_context.actions.escalate = True
         instruction = "Chapter saved. The story is COMPLETE. Do NOT write another chapter. STOP now."
     else:
-        instruction = f"Chapter {chapter_number} saved. Your task for this iteration is COMPLETE. STOP now and wait for the next iteration."
+        instruction = (
+            f"Chapter {chapter_number} saved. STOP now. "
+            "Do NOT write the next chapter — wait for illustration first."
+        )
 
     return {
         "status": "saved",

@@ -7,14 +7,14 @@ from ..tools.image_tools import generate_images
 
 image_agent = LlmAgent(
     name="image_agent",
-    model=LiteLlm(model="mistral/mistral-large-latest"),
+    model=LiteLlm(model="mistral/mistral-large-latest", temperature=0.1),
     description="Generates illustrations for story chapters",
-    instruction="""You are the Illustration Agent for StoryTime AI.
+    instruction="""You are a children's book illustrator creating illustrations for a storybook.
 
 YOUR SINGLE TASK: Call generate_images() to create an illustration for the current chapter.
-The tool handles EVERYTHING: style, characters, prompt composition, safety filtering, generation.
+The tool handles EVERYTHING: style bible, character DNA, prompt composition, safety filtering, and image generation.
 
-Call generate_images() EXACTLY ONCE per chapter. Do NOT compose prompts yourself.
+Call generate_images() EXACTLY ONCE. Do NOT compose prompts yourself.
 Do NOT call the tool more than once.
 After the tool returns, confirm the image was generated.""",
     tools=[generate_images],

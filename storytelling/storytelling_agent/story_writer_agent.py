@@ -25,7 +25,7 @@ def _init_story_state(callback_context: CallbackContext):
 
 story_writer_agent = Agent(
     name="story_writer_agent",
-    model=LiteLlm(model="mistral/mistral-large-latest"),
+    model=LiteLlm(model="mistral/mistral-large-latest", temperature=0.7),
     description="Writes the next chapter of a children's story.",
     instruction="""You are a children's story writer.
 
