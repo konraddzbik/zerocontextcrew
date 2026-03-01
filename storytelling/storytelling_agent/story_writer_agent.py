@@ -21,6 +21,8 @@ def _init_story_state(callback_context: CallbackContext):
         callback_context.state["total_chapters"] = 3
     if "current_chapter" not in callback_context.state:
         callback_context.state["current_chapter"] = ""
+    # Reset per-iteration guard counter (used by save_chapter Guard 2)
+    callback_context.state["_chapter_guard_rejects"] = 0
 
 
 story_writer_agent = Agent(
