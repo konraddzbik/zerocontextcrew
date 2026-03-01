@@ -4,6 +4,7 @@ export interface StoryRequest {
   animalCompanion: string;
   world: 'forest' | 'ocean' | 'mountains' | 'arctic';
   ageRange: '4-6' | '6-8';
+  customPrompt?: string;
 }
 
 export interface Story {
@@ -40,6 +41,8 @@ export interface ChoiceOption {
   consequence: string;
   lessonTag: string;
 }
+
+export type BookState = 'closed' | 'opening' | 'reading' | 'ended';
 
 export interface ParentSummary {
   lessonsLearned: string[];
