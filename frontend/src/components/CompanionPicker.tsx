@@ -32,10 +32,10 @@ export default function CompanionPicker({
             whileTap={{ scale: 0.94 }}
             animate={companion === c.id ? { scale: [1, 1.06, 1] } : {}}
             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-colors ${
+            className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
               companion === c.id
-                ? 'border-leaf bg-sky shadow-md'
-                : 'border-leaf/20 bg-surface hover:border-leaf/40'
+                ? 'border-[var(--gold)] bg-[var(--gold)]/10 shadow-md'
+                : 'border-[var(--ornate-border)] bg-surface hover:border-[var(--gold-muted)]'
             }`}
           >
             <span className="text-2xl">{c.emoji}</span>

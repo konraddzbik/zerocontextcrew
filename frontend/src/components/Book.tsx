@@ -16,7 +16,7 @@ interface BookProps {
   totalChapters: number | null;
   choices: Record<string, ChoiceOption>;
   onChoice: (chapterId: string, option: ChoiceOption) => void;
-  onFinish: () => void;
+
   onNewStory: () => void;
 }
 
@@ -27,7 +27,6 @@ export default function Book({
   totalChapters,
   choices,
   onChoice,
-  onFinish,
   onNewStory,
 }: BookProps) {
   const [bookState, setBookState] = useState<BookState>('closed');
