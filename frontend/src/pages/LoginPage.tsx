@@ -25,32 +25,32 @@ export default function LoginPage() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={scaleIn}
-          className={`bg-forest text-cream rounded-[20px] p-9 max-w-md w-full text-center shadow-lg ${
+          className={`bg-white rounded-2xl px-10 py-14 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)] ${
             shaking ? 'animate-shake' : ''
           }`}
         >
           {/* Decorative emoji */}
           <motion.div
-            className="text-5xl mb-4"
+            className="text-6xl mb-6"
             animate={{ rotate: [0, -5, 5, -3, 3, 0] }}
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
           >
             📖✨
           </motion.div>
 
-          <h1 className="font-display text-3xl font-bold text-sun mb-2">
+          <h1 className="font-display text-4xl font-bold text-forest mb-3">
             TaleWorld
           </h1>
-          <p className="text-cream/80 mb-8 font-body">
+          <p className="text-leaf mb-10 font-body text-lg">
             Enter the magic word to begin your adventure!
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div>
               <input
                 type="text"
@@ -60,7 +60,7 @@ export default function LoginPage() {
                   setUsername(e.target.value);
                   setError('');
                 }}
-                className="w-full px-4 py-3 rounded-xl bg-cream/10 border-2 border-cream/20 text-cream placeholder-cream/40 font-body text-lg focus:outline-none focus:border-sun transition-colors"
+                className="w-full px-6 py-5 rounded-2xl bg-cream border-2 border-leaf/20 text-forest placeholder-bark/30 font-body text-lg focus:outline-none focus:border-sun transition-colors"
               />
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function LoginPage() {
                   setPassword(e.target.value);
                   setError('');
                 }}
-                className="w-full px-4 py-3 rounded-xl bg-cream/10 border-2 border-cream/20 text-cream placeholder-cream/40 font-body text-lg focus:outline-none focus:border-sun transition-colors"
+                className="w-full px-6 py-5 rounded-2xl bg-cream border-2 border-leaf/20 text-forest placeholder-bark/30 font-body text-lg focus:outline-none focus:border-sun transition-colors"
               />
             </div>
 
@@ -88,17 +88,14 @@ export default function LoginPage() {
 
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97 }}
-              className="w-full py-3 rounded-xl bg-sun text-forest font-display font-bold text-lg hover:brightness-110 transition-all cursor-pointer"
+              className="w-full py-5 rounded-2xl bg-sun text-forest font-display font-bold text-lg shadow-lg hover:brightness-110 transition-all cursor-pointer mt-2"
             >
               Open the Book! 📖
             </motion.button>
           </form>
 
-          <p className="text-cream/30 text-xs mt-6 font-body">
-            A magical reading experience for children ages 4–8
-          </p>
         </motion.div>
       </div>
     </PageTransition>
