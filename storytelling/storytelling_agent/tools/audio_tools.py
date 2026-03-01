@@ -229,14 +229,11 @@ async def _generate_one_audio(
 async def generate_audio(tool_context: ToolContext) -> dict:
     """Generate audio narration for the current story chapter.
 
-    Reads state["current_chapter"] — set by save_chapter after each chapter
-    write — and narrates exactly that one chapter via ElevenLabs TTS.  The
-    agent is invoked once per chapter, so there is never more than one chapter
-    to narrate per call.
+    Reads state["current_chapter"] — set by save_chapter immediately before
+    this agent runs — and narrates exactly that one chapter via ElevenLabs TTS.
 
-    Idempotent: if this chapter already has a successful entry in
-    state["all_audio_results"], returns a skipped status immediately without
-    calling the API again.
+    Called once per loop iteration (after each chapter is written), so there is
+    always exactly one chapter to narrate.  No iteration over all_chapters.
 
     Args:
         tool_context: ADK tool context for reading/writing session state.
@@ -256,18 +253,6 @@ async def generate_audio(tool_context: ToolContext) -> dict:
         if isinstance(current, dict)
         else state.get("chapter_number", 1)
     )
-
-    # Idempotency: skip if already successfully narrated
-    audio_history: list = state.get("all_audio_results", [])
-    narrated_chapters: set[int] = {
-        r["chapter"] for r in audio_history if r.get("status") == "success"
-    }
-    if chapter_number in narrated_chapters:
-        return {
-            "status": "skipped",
-            "message": f"Chapter {chapter_number} already narrated.",
-            "chapter": chapter_number,
-        }
 
     logger.info("Generating audio for chapter %d", chapter_number)
 
