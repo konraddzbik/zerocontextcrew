@@ -1,0 +1,50 @@
+services:
+
+  # ─────────────────────────────────────────────
+  # ADK backend — FastAPI + story/image/audio agents
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./storytelling
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"   # ADK API + /audio static mount
+    env_file:
+      - ./storytelling/.env
+    environment:
+      PORT: "8000"
+      # Override audio URLs so they point to the backend's /audio mount
+      # (the background audio_server on 8001 is not needed inside Docker)
+      APP_BASE_URL: "http://localhost:8000/audio"
+    volumes:
+      # Persist generated audio between restarts
+      - audio_files:/app/generated_audio
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # Frontend — Vite/React built and served statically
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_AUTH_USERNAME: ${VITE_AUTH_USERNAME:-storyteller}
+        VITE_AUTH_PASSWORD: ${VITE_AUTH_PASSWORD:-taleworld}
+        VITE_API_MODE: ${VITE_API_MODE:-local}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "4173:4173"   # Production preview
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  audio_files:
