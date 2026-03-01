@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+/* === Design Tokens === */
+:root {
+  --forest: #1a3a2a;
+  --leaf: #4a7c59;
+  --sun: #f5c542;
+  --sky: #e8f0e8;
+  --cream: #faf8f2;
+  --coral: #e07a5f;
+  --water: #5b9bd5;
+  --berry: #9b5de5;
+  --bark: #6b4226;
+  --soft-shadow: rgba(26, 58, 42, 0.08);
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+/* === Tailwind Theme === */
+@theme {
+  --color-forest: #1a3a2a;
+  --color-leaf: #4a7c59;
+  --color-sun: #f5c542;
+  --color-sky: #e8f0e8;
+  --color-cream: #faf8f2;
+  --color-coral: #e07a5f;
+  --color-water: #5b9bd5;
+  --color-berry: #9b5de5;
+  --color-bark: #6b4226;
+  --color-soft-shadow: rgba(26, 58, 42, 0.08);
+
+  --font-family-display: 'Fraunces', serif;
+  --font-family-body: 'DM Sans', sans-serif;
+}
+
+/* === Base Styles === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--cream);
+  color: var(--forest);
+  min-height: 100vh;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle cross-hatch texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%231a3a2a' fill-opacity='1'%3E%3Cpath d='M0 0h1v40H0zM20 0h1v40h-1zM0 0v1h40V0zM0 20v1h40v-1z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Warm layered background gradients */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at top left, rgba(74, 124, 89, 0.06), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(245, 197, 66, 0.06), transparent 60%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+/* === Typography === */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* === Focus Styles (keyboard nav) === */
+*:focus-visible {
+  outline: 3px solid var(--sun);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* === Shake Animation === */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* === Reduced Motion === */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
