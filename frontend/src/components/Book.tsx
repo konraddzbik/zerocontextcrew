@@ -6,6 +6,10 @@ import BookCover from './BookCover';
 import BookSpread from './BookSpread';
 import TheEnd from './TheEnd';
 
+function isRealAudioUrl(url?: string): boolean {
+  return !!url && !url.includes('mock') && !url.includes('example.com');
+}
+
 // Fallback height if ref isn't ready yet
 const TEXT_AREA_HEIGHT_FALLBACK = 400;
 
@@ -27,7 +31,6 @@ export default function Book({
   totalChapters,
   choices,
   onChoice,
-  onFinish,
   onNewStory,
 }: BookProps) {
   const [bookState, setBookState] = useState<BookState>('closed');
@@ -39,6 +42,12 @@ export default function Book({
   const [illustrationPageIdx, setIllustrationPageIdx] = useState<number | null>(null);
   // Ref to measure actual text area height dynamically
   const textAreaRef = useRef<HTMLDivElement | null>(null);
+
+  // ── Persistent audio element ──────────────────────────────────────────────
+  // Kept at Book level so it survives page turns within a chapter.
+  // We update its src when the active chapter changes.
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   const isReady = chapters.length > 0;
   const chapter = chapters[currentChapterIndex];
@@ -81,6 +90,45 @@ export default function Book({
     setTextPageIndex(0);
     setIllustrationPageIdx(null);
   }, [currentChapterIndex]);
+
+  // Update audio src when the active chapter changes.
+  // Pause current playback, load the new chapter's audio (if any).
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const url = chapter?.audioUrl;
+    el.pause();
+    setIsAudioPlaying(false);
+    if (isRealAudioUrl(url)) {
+      el.src = url!;
+      el.load();
+    } else {
+      el.removeAttribute('src');
+    }
+  }, [currentChapterIndex, chapter?.audioUrl]);
+
+  // Also update src if audioUrl arrives after the chapter is already active
+  // (SSE delivers audio asynchronously, after the chapter text)
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || isAudioPlaying) return;
+    const url = chapter?.audioUrl;
+    if (isRealAudioUrl(url) && el.src !== url) {
+      el.src = url!;
+      el.load();
+    }
+  }, [chapter?.audioUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAudioToggle = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (isAudioPlaying) {
+      el.pause();
+      setIsAudioPlaying(false);
+    } else {
+      el.play().then(() => setIsAudioPlaying(true)).catch(() => setIsAudioPlaying(false));
+    }
+  }, [isAudioPlaying]);
 
   // Cover open — user click only
   const handleCoverOpen = useCallback(() => {
@@ -172,6 +220,13 @@ export default function Book({
 
   return (
     <div className="book-scene">
+      {/* Persistent audio element — lives outside the page DOM so page turns never kill it */}
+      <audio
+        ref={audioRef}
+        onEnded={() => setIsAudioPlaying(false)}
+        onPause={() => setIsAudioPlaying(false)}
+        style={{ display: 'none' }}
+      />
       <div className="book-shadow" />
 
       {/* Grid stage — all layers overlap in the same cell */}
@@ -242,6 +297,9 @@ export default function Book({
               pageNumber={bookPageNumber}
               hasNoIllustration={!hasIllustration}
               textAreaRef={textAreaRef}
+              audioRef={audioRef}
+              isAudioPlaying={isAudioPlaying}
+              onAudioToggle={handleAudioToggle}
             />
           </div>
         )}

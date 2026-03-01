@@ -1,28 +1,26 @@
-import { useState, useRef } from 'react';
+import { type RefObject } from 'react';
 import { motion } from 'framer-motion';
 
 interface AudioPlayerProps {
   audioUrl?: string;
   chapterTitle: string;
+  /** External <audio> element managed by Book so it survives page turns */
+  audioRef: RefObject<HTMLAudioElement | null>;
+  isPlaying: boolean;
+  onToggle: () => void;
 }
 
-export default function AudioPlayer({ audioUrl, chapterTitle }: AudioPlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const isMocked = !audioUrl || audioUrl.includes('mock') || audioUrl.includes('example.com');
+export default function AudioPlayer({
+  audioUrl,
+  chapterTitle,
+  audioRef: _audioRef,
+  isPlaying,
+  onToggle,
+}: AudioPlayerProps) {
+  const isReady = !!audioUrl && !audioUrl.includes('mock') && !audioUrl.includes('example.com');
 
-  function toggle() {
-    if (isMocked || !audioRef.current) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  }
-
-  if (isMocked) {
+  // No audio yet — placeholder
+  if (!isReady) {
     return (
       <motion.div
         className="narration-btn narration-btn--muted"
@@ -33,7 +31,7 @@ export default function AudioPlayer({ audioUrl, chapterTitle }: AudioPlayerProps
         transition={{ delay: 0.6 }}
       >
         <span className="narration-btn__icon" aria-hidden="true">&#9835;</span>
-        <span className="narration-btn__label">Narration coming soon</span>
+        <span className="narration-btn__label">Narration coming soon…</span>
       </motion.div>
     );
   }
@@ -44,9 +42,8 @@ export default function AudioPlayer({ audioUrl, chapterTitle }: AudioPlayerProps
       role="region"
       aria-label={`Audio narration for ${chapterTitle}`}
     >
-      {audioUrl && <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />}
       <motion.button
-        onClick={toggle}
+        onClick={onToggle}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
         className="narration-btn__play"

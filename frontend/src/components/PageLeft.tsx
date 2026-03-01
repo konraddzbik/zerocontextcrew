@@ -19,6 +19,10 @@ interface PageLeftProps {
   rightTextDone?: boolean;
   pageNumber: number;
   textAreaRef?: RefObject<HTMLDivElement | null>;
+  /** Lifted audio state from Book — keeps playback alive across page turns */
+  audioRef: RefObject<HTMLAudioElement | null>;
+  isAudioPlaying: boolean;
+  onAudioToggle: () => void;
 }
 
 export default function PageLeft({
@@ -35,6 +39,9 @@ export default function PageLeft({
   rightTextDone,
   pageNumber,
   textAreaRef,
+  audioRef,
+  isAudioPlaying,
+  onAudioToggle,
 }: PageLeftProps) {
   const { displayed, isDone } = useTypewriter(textContent, 50);
   const hasChoices = !!chapter.choice?.options?.length;
@@ -88,10 +95,14 @@ export default function PageLeft({
           <h2 className="chapter-title-book">
             {chapter.title.startsWith('Chapter') ? chapter.title : `Chapter ${chapter.chapterNumber}: ${chapter.title}`}
           </h2>
-          {/* Audio narration — below title, full width */}
-          {chapter.audioUrl && (
-            <AudioPlayer audioUrl={chapter.audioUrl} chapterTitle={chapter.title} />
-          )}
+          {/* Audio narration — always shown; placeholder when audioUrl not yet ready */}
+          <AudioPlayer
+            audioUrl={chapter.audioUrl}
+            chapterTitle={chapter.title}
+            audioRef={audioRef}
+            isPlaying={isAudioPlaying}
+            onToggle={onAudioToggle}
+          />
         </>
       )}
 

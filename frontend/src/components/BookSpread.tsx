@@ -22,6 +22,10 @@ interface BookSpreadProps {
   pageNumber: number;
   hasNoIllustration?: boolean;
   textAreaRef?: RefObject<HTMLDivElement | null>;
+  /** Lifted audio state — passed through to PageLeft */
+  audioRef: RefObject<HTMLAudioElement | null>;
+  isAudioPlaying: boolean;
+  onAudioToggle: () => void;
 }
 
 export default function BookSpread({
@@ -41,6 +45,9 @@ export default function BookSpread({
   pageNumber,
   hasNoIllustration,
   textAreaRef,
+  audioRef,
+  isAudioPlaying,
+  onAudioToggle,
 }: BookSpreadProps) {
   const leftPageNum = pageNumber * 2;
   const rightPageNum = leftPageNum + 1;
@@ -79,6 +86,9 @@ export default function BookSpread({
         rightTextDone={rightTextContent ? rightDone : undefined}
         pageNumber={leftPageNum}
         textAreaRef={textAreaRef}
+        audioRef={audioRef}
+        isAudioPlaying={isAudioPlaying}
+        onAudioToggle={onAudioToggle}
       />
 
       {rightTextContent ? (
