@@ -8,6 +8,11 @@ interface AudioPlayerProps {
   audioRef: RefObject<HTMLAudioElement | null>;
   isPlaying: boolean;
   onToggle: () => void;
+  /**
+   * Compact mode — used on non-first pages where vertical space is tight.
+   * Renders a small inline row instead of the full-width bar.
+   */
+  compact?: boolean;
 }
 
 export default function AudioPlayer({
@@ -16,11 +21,23 @@ export default function AudioPlayer({
   audioRef: _audioRef,
   isPlaying,
   onToggle,
+  compact = false,
 }: AudioPlayerProps) {
   const isReady = !!audioUrl && !audioUrl.includes('mock') && !audioUrl.includes('example.com');
 
-  // No audio yet — placeholder
+  // ── Placeholder — audio not yet available ────────────────────────────────
   if (!isReady) {
+    if (compact) {
+      return (
+        <div
+          className="narration-btn narration-btn--compact narration-btn--muted"
+          aria-label={`Audio narration for ${chapterTitle} — coming soon`}
+        >
+          <span className="narration-btn__icon" aria-hidden="true">&#9835;</span>
+          <span className="narration-btn__label">Narration coming soon…</span>
+        </div>
+      );
+    }
     return (
       <motion.div
         className="narration-btn narration-btn--muted"
@@ -36,6 +53,31 @@ export default function AudioPlayer({
     );
   }
 
+  // ── Compact variant — inner pages ─────────────────────────────────────────
+  if (compact) {
+    return (
+      <div
+        className="narration-btn narration-btn--compact"
+        role="region"
+        aria-label={`Audio narration for ${chapterTitle}`}
+      >
+        <motion.button
+          onClick={onToggle}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="narration-btn__play narration-btn__play--sm"
+          aria-label={isPlaying ? `Pause narration` : `Play narration`}
+        >
+          {isPlaying ? '⏸' : '▶'}
+        </motion.button>
+        <span className="narration-btn__label">
+          {isPlaying ? 'Playing…' : 'Narration'}
+        </span>
+      </div>
+    );
+  }
+
+  // ── Full variant — first page ─────────────────────────────────────────────
   return (
     <div
       className="narration-btn"

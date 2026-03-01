@@ -67,6 +67,74 @@ def _extract_text(chapter_data: Any) -> str:
     return str(chapter_data) if chapter_data else ""
 
 
+def _make_silent_mp3(duration_ms: int = 2000) -> bytes:
+    """Return a minimal valid MP3 containing silence.
+
+    Builds raw MPEG-1 Layer 3 frames (44100 Hz, 128 kbps, stereo).
+    Each frame is 417 bytes and represents ~26 ms of audio.
+    No third-party library required.
+    """
+    # Minimal MP3 frame header for 44100 Hz / 128 kbps / stereo / no padding
+    # Sync word (0xFFE0) + MPEG-1 + Layer3 + 128kbps + 44100Hz + stereo
+    HEADER = bytes([0xFF, 0xFB, 0x90, 0x00])
+    FRAME_DURATION_MS = 26  # one MPEG-1 L3 frame at 44100 Hz
+    FRAME_SIZE = 417  # bytes per frame at 128 kbps, no padding
+
+    num_frames = max(1, duration_ms // FRAME_DURATION_MS)
+    # Each frame: 4-byte header + zero-filled audio data
+    frame = HEADER + bytes(FRAME_SIZE - 4)
+    return frame * num_frames
+
+
+async def _generate_mock_audio(
+    text: str,
+    chapter_number: int,
+    word_count: int,
+    tool_context: ToolContext,
+) -> dict:
+    """Write a silent MP3 placeholder — used when ELEVENLABS_MOCK=true.
+
+    Duration scales with word count (150 wpm) so the progress bar feels right
+    without consuming any ElevenLabs credits.
+    """
+    audio_server.ensure_running()
+
+    estimated_duration = round(word_count / 2.5, 1)  # ~150 wpm
+    duration_ms = max(1000, int(estimated_duration * 1000))
+    audio_bytes = _make_silent_mp3(duration_ms)
+
+    output_dir = _ensure_output_dir()
+    audio_id = uuid.uuid4().hex[:12]
+    filename = f"chapter_{chapter_number}_{audio_id}.mp3"
+    filepath = output_dir / filename
+
+    async with aiofiles.open(filepath, "wb") as f:
+        await f.write(audio_bytes)
+
+    file_size_kb = round(len(audio_bytes) / 1024, 1)
+    audio_url = f"{audio_server.APP_BASE_URL}/{filename}"
+
+    logger.info(
+        "[MOCK] Audio placeholder generated for chapter %d: %s (%.1f KB, ~%.0fs)",
+        chapter_number, filename, file_size_kb, estimated_duration,
+    )
+
+    result = {
+        "status": "success",
+        "chapter": chapter_number,
+        "audio_url": audio_url,
+        "duration_seconds_estimate": estimated_duration,
+        "file_size_kb": file_size_kb,
+        "audio_id": audio_id,
+        "audio_file": str(filepath),
+        "filename": filename,
+        "word_count": word_count,
+        "mock": True,
+    }
+    _accumulate_result(tool_context.state, result)
+    return result
+
+
 async def _generate_one_audio(
     chapter_data: Any,
     chapter_number: int,
@@ -107,6 +175,11 @@ async def _generate_one_audio(
         }
         _accumulate_result(tool_context.state, result)
         return result
+
+    # --- Mock mode — no API call, no credits used ---
+    # Set ELEVENLABS_MOCK=true in .env to generate a silent placeholder MP3.
+    if os.getenv("ELEVENLABS_MOCK", "").lower() in ("1", "true", "yes"):
+        return await _generate_mock_audio(text, chapter_number, word_count, tool_context)
 
     # Ensure the background file server is running
     audio_server.ensure_running()

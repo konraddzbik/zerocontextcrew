@@ -95,16 +95,18 @@ export default function PageLeft({
           <h2 className="chapter-title-book">
             {chapter.title.startsWith('Chapter') ? chapter.title : `Chapter ${chapter.chapterNumber}: ${chapter.title}`}
           </h2>
-          {/* Audio narration — always shown; placeholder when audioUrl not yet ready */}
-          <AudioPlayer
-            audioUrl={chapter.audioUrl}
-            chapterTitle={chapter.title}
-            audioRef={audioRef}
-            isPlaying={isAudioPlaying}
-            onToggle={onAudioToggle}
-          />
         </>
       )}
+
+      {/* Audio player — every page; full variant on first, compact on subsequent */}
+      <AudioPlayer
+        audioUrl={chapter.audioUrl}
+        chapterTitle={chapter.title}
+        audioRef={audioRef}
+        isPlaying={isAudioPlaying}
+        onToggle={onAudioToggle}
+        compact={!isFirstTextPage}
+      />
 
       {/* Story text */}
       <div ref={textAreaRef} className="story-text-book flex-1" style={{ overflow: 'hidden' }}>
