@@ -21,10 +21,10 @@ export default function BedtimeToggle() {
       onClick={toggleBedtime}
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.97 }}
-      className={`relative w-full text-left p-5 rounded-2xl border-2 cursor-pointer transition-colors overflow-hidden ${
+      className={`relative w-full text-left p-5 rounded-lg border-2 cursor-pointer transition-colors overflow-hidden ${
         isBedtime
-          ? 'border-berry/40 bg-berry/10 shadow-md'
-          : 'border-leaf/20 bg-surface hover:border-leaf/40'
+          ? 'border-[var(--gold)]/40 bg-[var(--gold)]/10 shadow-md'
+          : 'border-[var(--ornate-border)] bg-surface hover:border-[var(--gold-muted)]'
       }`}
       aria-label={isBedtime ? 'Disable bedtime story mode' : 'Enable bedtime story mode'}
       aria-pressed={isBedtime}
@@ -54,8 +54,8 @@ export default function BedtimeToggle() {
         <div
           className={`shrink-0 w-5 h-5 rounded-full border-2 transition-colors duration-300 flex items-center justify-center ${
             isBedtime
-              ? 'border-berry bg-berry'
-              : 'border-leaf/30 bg-transparent'
+              ? 'border-[var(--gold)] bg-[var(--gold)]'
+              : 'border-[var(--gold-muted)]/30 bg-transparent'
           }`}
         >
           <AnimatePresence>
@@ -86,7 +86,7 @@ export default function BedtimeToggle() {
           stars.map((star, i) => (
             <motion.span
               key={i}
-              className="absolute pointer-events-none text-berry/40"
+              className="absolute pointer-events-none text-[var(--gold)]/40"
               style={{
                 top: star.top,
                 right: star.right,

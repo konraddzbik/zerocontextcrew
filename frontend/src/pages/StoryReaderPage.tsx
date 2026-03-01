@@ -74,10 +74,6 @@ export default function StoryReaderPage() {
     setChoices((prev) => ({ ...prev, [chapterId]: option }));
   }
 
-  function handleFinish() {
-    navigate('/summary', { state: { story, choices } });
-  }
-
   function handleNewStory() {
     navigate('/pick');
   }
@@ -166,7 +162,6 @@ export default function StoryReaderPage() {
             totalChapters={totalChapters}
             choices={choices}
             onChoice={handleChoice}
-            onFinish={handleFinish}
             onNewStory={handleNewStory}
           />
         </motion.div>
