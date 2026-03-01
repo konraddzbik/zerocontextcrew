@@ -153,6 +153,37 @@ h1, h2, h3, h4 {
   --gold-muted: #8B6914;
   --dropcap: #8B1A1A;
   --table: #2c1810;
+  --page-edge-light: #f5e6d3;
+  --page-edge-dark: #ede0cc;
+  --page-edge-alt-light: #f2dfc8;
+  --page-edge-alt-dark: #e8d4bb;
+  --cover-edge-light: #5a3a1e;
+  --cover-edge-dark: #4a2e16;
+  --ornate-border: rgba(139,105,20,0.22);
+  --ornate-border-inner: rgba(139,105,20,0.13);
+  --page-stain: rgba(139,109,76,0.06);
+  --page-stain-subtle: rgba(139,109,76,0.03);
+}
+[data-theme="bedtime"] {
+  --parchment: #1a2636;
+  --ink: #c8d6e5;
+  --chapter-title: #d4a54a;
+  --leather: #2a1f14;
+  --leather-dark: #1a1410;
+  --gold: #d4a54a;
+  --gold-muted: #b8963a;
+  --dropcap: #c17a6a;
+  --table: #1a2636;
+  --page-edge-light: #1e2a3a;
+  --page-edge-dark: #172234;
+  --page-edge-alt-light: #1c2838;
+  --page-edge-alt-dark: #162032;
+  --cover-edge-light: #1a1410;
+  --cover-edge-dark: #120e0a;
+  --ornate-border: rgba(184,150,58,0.2);
+  --ornate-border-inner: rgba(184,150,58,0.1);
+  --page-stain: rgba(200,214,229,0.03);
+  --page-stain-subtle: rgba(200,214,229,0.015);
 }
 
 /* ── Storybook 3D Scene ── */
@@ -203,8 +234,8 @@ h1, h2, h3, h4 {
   height: min(70vh, 650px);
   background-color: var(--parchment);
   background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(139,109,76,0.03) 30px, rgba(139,109,76,0.03) 31px),
-    repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(139,109,76,0.02) 30px, rgba(139,109,76,0.02) 31px);
+    repeating-linear-gradient(0deg, transparent, transparent 30px, var(--page-stain-subtle) 30px, var(--page-stain-subtle) 31px),
+    repeating-linear-gradient(90deg, transparent, transparent 30px, var(--page-stain-subtle) 30px, var(--page-stain-subtle) 31px);
   border-radius: 4px 12px 12px 4px;
   box-shadow: 0 10px 40px var(--soft-shadow), 0 2px 8px rgba(0,0,0,0.08), inset 0 0 80px rgba(139,109,76,0.1);
   position: relative;
@@ -213,24 +244,6 @@ h1, h2, h3, h4 {
   z-index: 1;
 }
 
-/* Page edges — right side (stack of pages visible from the side) */
-.book-spread::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  right: -14px;
-  width: 14px;
-  height: calc(100% - 8px);
-  background: repeating-linear-gradient(
-    to bottom,
-    #f5e6d3 0px,
-    #ede0cc 1px,
-    #f5e6d3 2px
-  );
-  border-radius: 0 3px 3px 0;
-  box-shadow: 2px 0 6px rgba(0,0,0,0.2);
-  z-index: -1;
-}
 
 /* Book spine — 3D V-shape shadow */
 .book-spread::after {
@@ -255,40 +268,10 @@ h1, h2, h3, h4 {
   );
 }
 
-/* Page edges — bottom (stack of pages) */
-.book-spread-bottom-edge {
-  position: absolute;
-  bottom: -10px;
-  left: 8px;
-  right: 8px;
-  height: 10px;
-  background: repeating-linear-gradient(
-    to right,
-    #f2dfc8 0px,
-    #e8d4bb 1px,
-    #f2dfc8 2px
-  );
-  border-radius: 0 0 3px 3px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-  z-index: -1;
-}
-
-/* Page edges — top */
+/* Page edge stacks removed — cleaner look */
+.book-spread-bottom-edge,
 .book-spread-top-edge {
-  position: absolute;
-  top: -8px;
-  left: 10px;
-  right: 10px;
-  height: 8px;
-  background: repeating-linear-gradient(
-    to right,
-    #f5e6d3 0px,
-    #ede0cc 1px,
-    #f5e6d3 2px
-  );
-  border-radius: 3px 3px 0 0;
-  box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-  z-index: -1;
+  display: none;
 }
 
 /* ── Ornate page styling — illuminated manuscript ── */
@@ -297,9 +280,9 @@ h1, h2, h3, h4 {
   position: relative;
   /* Aged parchment stains */
   background-image:
-    radial-gradient(ellipse at 80% 12%, rgba(139,109,76,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 15% 85%, rgba(139,109,76,0.05) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 50%, rgba(139,109,76,0.02) 0%, transparent 70%);
+    radial-gradient(ellipse at 80% 12%, var(--page-stain) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 85%, var(--page-stain) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, var(--page-stain-subtle) 0%, transparent 70%);
 }
 
 /* Page curvature (inset shadows at spine) */
@@ -320,7 +303,7 @@ h1, h2, h3, h4 {
   bottom: 8px;
   left: 8px;
   right: 8px;
-  border: 2px solid rgba(139,105,20,0.22);
+  border: 2px solid var(--ornate-border);
   pointer-events: none;
   z-index: 5;
 }
@@ -334,7 +317,7 @@ h1, h2, h3, h4 {
   bottom: 14px;
   left: 14px;
   right: 14px;
-  border: 1px solid rgba(139,105,20,0.13);
+  border: 1px solid var(--ornate-border-inner);
   pointer-events: none;
   z-index: 5;
 }
@@ -368,7 +351,7 @@ h1, h2, h3, h4 {
   right: -8px;
   width: 8px;
   height: calc(100% - 6px);
-  background: linear-gradient(to right, #5a3a1e, #4a2e16);
+  background: linear-gradient(to right, var(--cover-edge-light), var(--cover-edge-dark));
   border-radius: 0 4px 4px 0;
   box-shadow: 3px 0 8px rgba(0,0,0,0.3);
 }
@@ -380,7 +363,7 @@ h1, h2, h3, h4 {
   left: 5px;
   right: 5px;
   height: 6px;
-  background: linear-gradient(to bottom, #5a3a1e, #4a2e16);
+  background: linear-gradient(to bottom, var(--cover-edge-light), var(--cover-edge-dark));
   border-radius: 0 0 4px 4px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.3);
 }
@@ -439,6 +422,47 @@ h1, h2, h3, h4 {
     inset -1px -1px 2px rgba(0,0,0,0.15);
 }
 
+/* ── Illustration frame — ornate corner brackets ── */
+.illustration-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+.illustration-frame::before,
+.illustration-frame::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: rgba(139,105,20,0.35);
+  border-style: solid;
+  pointer-events: none;
+}
+.illustration-frame::before {
+  top: 0; left: 0;
+  border-width: 2px 0 0 2px;
+}
+.illustration-frame::after {
+  bottom: 0; right: 0;
+  border-width: 0 2px 2px 0;
+}
+.illustration-corner-tr {
+  position: absolute; top: 0; right: 0;
+  width: 20px; height: 20px;
+  border-top: 2px solid rgba(139,105,20,0.35);
+  border-right: 2px solid rgba(139,105,20,0.35);
+  pointer-events: none;
+}
+.illustration-corner-bl {
+  position: absolute; bottom: 0; left: 0;
+  width: 20px; height: 20px;
+  border-bottom: 2px solid rgba(139,105,20,0.35);
+  border-left: 2px solid rgba(139,105,20,0.35);
+  pointer-events: none;
+}
+
 /* ── Illustration — ornate gold frame, painted on page ── */
 .illustration-on-page {
   max-width: 100%;
@@ -448,12 +472,36 @@ h1, h2, h3, h4 {
   mix-blend-mode: multiply;
   opacity: 0.95;
   filter: saturate(0.9) contrast(0.95);
-  border: 3px solid rgba(139,105,20,0.25);
+  padding: 6px;
+  background: linear-gradient(135deg, rgba(212,165,71,0.08), rgba(139,105,20,0.04));
+  border: 2px solid rgba(139,105,20,0.3);
   box-shadow:
-    inset 0 0 0 2px rgba(139,105,20,0.08),
-    0 2px 12px rgba(0,0,0,0.1);
-  padding: 3px;
-  background: rgba(139,105,20,0.04);
+    inset 0 0 0 1px rgba(212,165,71,0.15),
+    inset 0 0 0 3px rgba(139,105,20,0.06),
+    0 2px 8px rgba(0,0,0,0.08),
+    0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ── Illustration caption ── */
+.illustration-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.illustration-caption .caption-text {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ink);
+  opacity: 0.5;
+  text-align: center;
+}
+.illustration-caption .caption-flourish {
+  color: var(--gold-muted);
+  opacity: 0.35;
+  font-size: 0.8rem;
 }
 
 /* ── Decorative page bottom border ── */
@@ -474,6 +522,30 @@ h1, h2, h3, h4 {
   font-size: 0.7rem;
   color: var(--gold-muted);
   opacity: 0.35;
+}
+
+/* ── "The End" New-Adventure button ── */
+.the-end-btn {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold-muted) 12%, transparent);
+  border: 1.5px solid var(--gold-muted);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  letter-spacing: 0.04em;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.the-end-btn:hover {
+  background: color-mix(in srgb, var(--gold-muted) 22%, transparent);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+[data-theme="bedtime"] .the-end-btn {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  border-color: var(--gold);
+  box-shadow: 0 2px 14px rgba(212,165,71,0.15);
+}
+[data-theme="bedtime"] .the-end-btn:hover {
+  background: color-mix(in srgb, var(--gold) 24%, transparent);
+  box-shadow: 0 4px 20px rgba(212,165,71,0.25);
 }
 
 /* ── Storybook Typography ── */
@@ -555,11 +627,12 @@ h1, h2, h3, h4 {
 }
 
 @keyframes illustration-reveal {
-  from { opacity: 0; filter: blur(8px); transform: scale(0.95); }
-  to   { opacity: 1; filter: blur(0);   transform: scale(1); }
+  0%  { opacity: 0; filter: blur(12px) sepia(0.6) saturate(0.3); transform: scale(0.93); }
+  40% { opacity: 0.7; filter: blur(4px) sepia(0.3) saturate(0.6); transform: scale(0.97); }
+  100%{ opacity: 1; filter: blur(0) sepia(0) saturate(0.9); transform: scale(1); }
 }
 .illustration-enter {
-  animation: illustration-reveal 0.8s ease-out forwards;
+  animation: illustration-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes quill-write {
@@ -637,7 +710,7 @@ h1, h2, h3, h4 {
   justify-content: center;
   font-size: 1.1rem;
   color: var(--gold);
-  background: rgba(139,105,20,0.1);
+  background: color-mix(in srgb, var(--gold-muted) 15%, transparent);
   border: 1.5px solid var(--gold-muted);
   cursor: pointer;
   transition: opacity 0.2s;
@@ -654,4 +727,39 @@ h1, h2, h3, h4 {
   opacity: 0.5;
   min-width: 100px;
   text-align: center;
+}
+
+/* ── Enhanced book navigation ── */
+.book-nav-info-enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 140px;
+}
+.book-nav-chapter {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.8rem;
+  color: var(--ink);
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+}
+.book-nav-of {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+/* ── Chapter progress bar ── */
+.book-progress-bar {
+  width: min(60vw, 500px);
+  height: 3px;
+  background: color-mix(in srgb, var(--gold-muted) 20%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0.5rem auto 0;
+}
+.book-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-muted), var(--gold));
+  border-radius: 2px;
 }

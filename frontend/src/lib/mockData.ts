@@ -24,42 +24,25 @@ Hazel's ears perked up. He tugged Luna's sleeve and pointed his nose toward a cl
       illustrations: [
         {
           id: 'ill-1-1',
-          imageUrl: 'https://placehold.co/800x500/e8f0e8/1a3a2a?text=Luna+at+the+window',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'A young girl looking out her window at glowing golden mushrooms leading into a forest',
           position: 'full-width',
         },
         {
           id: 'ill-1-2',
-          imageUrl: 'https://placehold.co/400x400/e8f0e8/4a7c59?text=Hazel+the+Fox',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'A small red fox with a bushy tail wagging excitedly by a wooden door',
           position: 'inline',
         },
         {
           id: 'ill-1-3',
-          imageUrl: 'https://placehold.co/800x500/e8f0e8/1a3a2a?text=Moonlight+Owl',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'A tiny owl with silver moonlight-colored feathers sitting in a circle of golden mushrooms',
           position: 'full-width',
         },
       ],
       audioUrl: 'https://mock-audio.example.com/chapter-1.mp3',
       ecoFact: 'Mushrooms are nature\'s recyclers! They break down old leaves and wood, turning them back into soil that helps new plants grow.',
-      choice: {
-        question: 'The owl offers Luna two paths. Which should she take?',
-        options: [
-          {
-            id: 'choice-1a',
-            label: 'The path with the singing stream',
-            consequence: 'Luna follows the stream and discovers fish who need help clearing pollution from their water.',
-            lessonTag: 'ecology',
-          },
-          {
-            id: 'choice-1b',
-            label: 'The path through the giant flowers',
-            consequence: 'Luna enters a garden of enormous flowers and meets bees who teach her about pollination.',
-            lessonTag: 'courage',
-          },
-        ],
-      },
     },
     {
       id: 'ch-2',
@@ -85,19 +68,19 @@ As the sun began to set, the first star appeared in the sky — and its reflecti
       illustrations: [
         {
           id: 'ill-2-1',
-          imageUrl: 'https://placehold.co/800x500/e8f0e8/5b9bd5?text=Sparkling+Stream',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'A crystal-clear stream sparkling with reflected starlight flowing through a green forest',
           position: 'full-width',
         },
         {
           id: 'ill-2-2',
-          imageUrl: 'https://placehold.co/400x400/e8f0e8/e07a5f?text=Polluted+Water',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'Luna looking sad at a cloudy stream with plastic bottles caught between rocks',
           position: 'inline',
         },
         {
           id: 'ill-2-3',
-          imageUrl: 'https://placehold.co/800x500/e8f0e8/4a7c59?text=Cleaning+Together',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'Luna, a fox, an owl, and otters working together to clean trash from the stream',
           position: 'full-width',
         },
@@ -131,19 +114,19 @@ Hazel wagged his tail. He already knew the answer was everything.`,
       illustrations: [
         {
           id: 'ill-3-1',
-          imageUrl: 'https://placehold.co/800x500/1a3a2a/f5c542?text=Starlight+Stream',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'A stream glowing silver and blue reflecting every star, lighting up the whole forest at night',
           position: 'full-width',
         },
         {
           id: 'ill-3-2',
-          imageUrl: 'https://placehold.co/400x400/1a3a2a/5b9bd5?text=Dancing+Fish',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'Silver fish leaping and spinning above the water, drawing patterns of light in the air',
           position: 'inline',
         },
         {
           id: 'ill-3-3',
-          imageUrl: 'https://placehold.co/800x500/e8f0e8/4a7c59?text=Walking+Home',
+          imageUrl: '/mocks/mock_image.png',
           altText: 'Luna and Hazel the fox walking home along a path of golden glowing mushrooms under the stars',
           position: 'full-width',
         },
@@ -163,12 +146,6 @@ Hazel wagged his tail. He already knew the answer was everything.`,
       'River pollution hurts thousands of aquatic species.',
       'Clean rivers help filter our drinking water.',
     ],
-    choicesMade: [
-      {
-        question: 'Which path should Luna take?',
-        chosen: 'The path with the singing stream',
-        lesson: 'Choosing to help others leads to wonderful discoveries.',
-      },
-    ],
+    choicesMade: [],
   },
 };

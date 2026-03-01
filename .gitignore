@@ -4,6 +4,7 @@
 
 # Generated assets
 generated_audio/
+frontend/public/mocks/
 
 # Python
 __pycache__/

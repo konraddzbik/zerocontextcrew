@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTypewriter } from '../hooks/useTypewriter';
 import { TopVignette, PageCorners } from './PageOrnaments';
@@ -18,6 +18,7 @@ interface PageLeftProps {
   onTextComplete?: () => void;
   rightTextDone?: boolean;
   pageNumber: number;
+  textAreaRef?: RefObject<HTMLDivElement | null>;
 }
 
 export default function PageLeft({
@@ -33,6 +34,7 @@ export default function PageLeft({
   onTextComplete,
   rightTextDone,
   pageNumber,
+  textAreaRef,
 }: PageLeftProps) {
   const { displayed, isDone } = useTypewriter(textContent, 50);
   const hasChoices = !!chapter.choice?.options?.length;
@@ -97,7 +99,7 @@ export default function PageLeft({
       )}
 
       {/* Story text */}
-      <div className="story-text-book flex-1" style={{ overflow: 'hidden' }}>
+      <div ref={textAreaRef} className="story-text-book flex-1" style={{ overflow: 'hidden' }}>
         {firstLetter && <span className={dropcapClass}>{firstLetter}</span>}
         <span style={{ whiteSpace: 'pre-line' }}>{restText}</span>
         {!isDone && <span className="typewriter-cursor" />}

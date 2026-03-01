@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { Chapter, ChoiceOption, BookState } from '../lib/types';
 import { useTextPagination } from '../hooks/useTextPagination';
@@ -6,10 +6,8 @@ import BookCover from './BookCover';
 import BookSpread from './BookSpread';
 import TheEnd from './TheEnd';
 
-// Available height for story text in the left page (px).
-// book-spread height ~650px, minus top padding 32 + bottom padding 64 = 554px,
-// minus bottom border/page-number zone ~94px ≈ 460px
-const TEXT_AREA_HEIGHT = 460;
+// Fallback height if ref isn't ready yet
+const TEXT_AREA_HEIGHT_FALLBACK = 400;
 
 interface BookProps {
   chapters: Chapter[];
@@ -39,12 +37,17 @@ export default function Book({
   const [bookPageNumber, setBookPageNumber] = useState(1);
   // Track which textPageIndex should show the illustration (null = not yet placed)
   const [illustrationPageIdx, setIllustrationPageIdx] = useState<number | null>(null);
+  // Ref to measure actual text area height dynamically
+  const textAreaRef = useRef<HTMLDivElement | null>(null);
 
   const isReady = chapters.length > 0;
   const chapter = chapters[currentChapterIndex];
 
   // Paginate current chapter text into pages that fit on screen
-  const textPages = useTextPagination(chapter?.text || '', TEXT_AREA_HEIGHT);
+  const textPages = useTextPagination(
+    chapter?.text || '',
+    textAreaRef.current ? textAreaRef : TEXT_AREA_HEIGHT_FALLBACK,
+  );
   const isFirstTextPage = textPageIndex === 0;
 
   const hasIllustration = !!chapter?.illustrations[0]?.imageUrl;
@@ -175,14 +178,19 @@ export default function Book({
       <div className="book-stage">
         {/* CLOSED: just the cover */}
         {bookState === 'closed' && (
-          <div className="book-stage-layer">
+          <motion.div
+            className="book-stage-layer"
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+          >
             <BookCover
               title={title}
               onOpen={handleCoverOpen}
               isOpening={false}
               isReady={isReady}
             />
-          </div>
+          </motion.div>
         )}
 
         {/* OPENING: static parchment spread behind + cover flips on top */}
@@ -232,6 +240,8 @@ export default function Book({
               onAutoTurn={handleAutoTurn}
               onFlipComplete={handleFlipComplete}
               pageNumber={bookPageNumber}
+              hasNoIllustration={!hasIllustration}
+              textAreaRef={textAreaRef}
             />
           </div>
         )}
@@ -265,7 +275,6 @@ export default function Book({
             transition={{ duration: 0.6 }}
           >
             <TheEnd
-              onViewSummary={onFinish}
               onNewStory={onNewStory}
             />
           </motion.div>
@@ -285,10 +294,12 @@ export default function Book({
             &larr;
           </motion.button>
 
-          <span className="book-nav-info">
-            Ch {(chapter?.chapterNumber ?? currentChapterIndex + 1)}
-            {textPages.length > 1 && ` · ${textPageIndex + 1}/${textPages.length}`}
-          </span>
+          <div className="book-nav-info-enhanced">
+            <div className="book-nav-chapter">
+              Chapter {chapter?.chapterNumber ?? currentChapterIndex + 1}
+              {totalChapters && <span className="book-nav-of"> of {totalChapters}</span>}
+            </div>
+          </div>
 
           <motion.button
             onClick={() => triggerFlip()}
@@ -299,6 +310,18 @@ export default function Book({
           >
             &rarr;
           </motion.button>
+        </div>
+      )}
+
+      {/* Chapter progress bar */}
+      {bookState === 'reading' && totalChapters && totalChapters > 1 && (
+        <div className="book-progress-bar">
+          <motion.div
+            className="book-progress-fill"
+            initial={false}
+            animate={{ width: `${((chapter?.chapterNumber ?? 1) / totalChapters) * 100}%` }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          />
         </div>
       )}
     </div>
