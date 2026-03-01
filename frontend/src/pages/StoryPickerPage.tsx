@@ -5,6 +5,8 @@ import CharacterPicker from '../components/CharacterPicker';
 import CompanionPicker from '../components/CompanionPicker';
 import WorldPicker from '../components/WorldPicker';
 import FreeformPicker from '../components/FreeformPicker';
+import BedtimeToggle from '../components/BedtimeToggle';
+import { useBedtime } from '../components/BedtimeContext';
 import { PageTransition, StaggerList, StaggerItem } from '../components/motion';
 
 type Mode = 'guided' | 'freeform';
@@ -26,6 +28,7 @@ const modes = [
 
 export default function StoryPickerPage() {
   const navigate = useNavigate();
+  const { isBedtime } = useBedtime();
 
   // Guided mode state
   const [mode, setMode] = useState<Mode>('guided');
@@ -51,11 +54,12 @@ export default function StoryPickerPage() {
         state: {
           customPrompt: `Write a children's story in English with 3 chapters. Target age: 4-6 years old. Include ecology lessons and a sense of wonder.\n\nStory idea: ${prompt.trim()}${moodSuffix}`,
           world: 'forest',
+          bedtimeMode: isBedtime,
         },
       });
     } else {
       navigate('/story', {
-        state: { name, characterType, companion, world },
+        state: { name, characterType, companion, world, bedtimeMode: isBedtime },
       });
     }
   }
@@ -65,13 +69,20 @@ export default function StoryPickerPage() {
       <div className="min-h-screen py-8 px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <h1 className="font-display text-4xl font-bold text-forest mb-2">
-              Create Your Story ✨
+              {isBedtime ? 'Create Your Bedtime Story \u{1F319}' : 'Create Your Story \u2728'}
             </h1>
             <p className="font-body text-lg text-leaf">
-              Choose your path and we'll write a story just for you!
+              {isBedtime
+                ? 'A cozy story to drift off to sleep...'
+                : "Choose your path and we'll write a story just for you!"}
             </p>
+          </div>
+
+          {/* Bedtime mode tile */}
+          <div className="mb-8">
+            <BedtimeToggle />
           </div>
 
           {/* Mode switcher */}
@@ -85,7 +96,7 @@ export default function StoryPickerPage() {
                 className={`text-left p-5 rounded-2xl border-2 cursor-pointer transition-colors ${
                   mode === m.id
                     ? 'border-sun bg-sun/10 shadow-md'
-                    : 'border-leaf/20 bg-white hover:border-leaf/40'
+                    : 'border-leaf/20 bg-surface hover:border-leaf/40'
                 }`}
               >
                 <span className="text-3xl block mb-2">{m.emoji}</span>
@@ -112,7 +123,7 @@ export default function StoryPickerPage() {
                 <StaggerList className="space-y-8">
                   <StaggerItem>
                     <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Hero</p>
-                    <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                    <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
                       <CharacterPicker
                         name={name}
                         onNameChange={setName}
@@ -124,7 +135,7 @@ export default function StoryPickerPage() {
 
                   <StaggerItem>
                     <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Companion</p>
-                    <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                    <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
                       <CompanionPicker
                         companion={companion}
                         onCompanionChange={setCompanion}
@@ -134,7 +145,7 @@ export default function StoryPickerPage() {
 
                   <StaggerItem>
                     <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your World</p>
-                    <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                    <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
                       <WorldPicker selected={world} onSelect={setWorld} />
                     </div>
                   </StaggerItem>
@@ -143,7 +154,7 @@ export default function StoryPickerPage() {
                 {/* Preview of selections */}
                 {guidedReady && (
                   <motion.div
-                    className="mt-8 bg-white rounded-2xl px-6 py-4 shadow-[0_4px_20px_var(--soft-shadow)] text-center"
+                    className="mt-8 bg-surface rounded-2xl px-6 py-4 shadow-[0_4px_20px_var(--soft-shadow)] text-center"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
@@ -163,7 +174,7 @@ export default function StoryPickerPage() {
                 transition={{ duration: 0.25 }}
               >
                 <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Story</p>
-                <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
                   <FreeformPicker
                     prompt={prompt}
                     onPromptChange={setPrompt}

@@ -54,7 +54,7 @@ export default function CharacterPicker({
               className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
                 selectedType === ct.id
                   ? 'border-leaf bg-sky shadow-md'
-                  : 'border-leaf/20 bg-white hover:border-leaf/40'
+                  : 'border-leaf/20 bg-surface hover:border-leaf/40'
               }`}
             >
               <span className="text-3xl">{ct.emoji}</span>

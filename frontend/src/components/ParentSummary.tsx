@@ -8,7 +8,7 @@ export default function ParentSummary({ summary }: ParentSummaryProps) {
   return (
     <div className="space-y-6">
       {/* Lessons */}
-      <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-leaf">
+      <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-leaf">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xl">🎯</span>
           <h3 className="font-display font-bold text-forest text-lg">Lessons Learned</h3>
@@ -24,7 +24,7 @@ export default function ParentSummary({ summary }: ParentSummaryProps) {
       </div>
 
       {/* Eco facts */}
-      <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-water">
+      <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-water">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xl">🌍</span>
           <h3 className="font-display font-bold text-forest text-lg">Eco Facts Discovered</h3>
@@ -41,7 +41,7 @@ export default function ParentSummary({ summary }: ParentSummaryProps) {
 
       {/* Choices made */}
       {summary.choicesMade.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-sun">
+        <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-sun">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xl">🤔</span>
             <h3 className="font-display font-bold text-forest text-lg">Choices Made</h3>

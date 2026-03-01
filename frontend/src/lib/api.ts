@@ -12,6 +12,8 @@ function generateId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
+const BEDTIME_SUFFIX = `\n\nThis is a bedtime story meant to help a child fall asleep. Use a calm, soothing, and gentle tone throughout. Include descriptions of cozy, warm, and peaceful settings — soft blankets of starlight, warm dens, gentle breezes. The story should have a calming, sleep-inducing rhythm with shorter sentences toward the end of each chapter. End the final chapter with the characters settling down to rest under the stars.`;
+
 /**
  * ADK artifact API returns JSON `{inlineData: {mimeType, data}}` with base64.
  * Fetch it, decode, and return a blob URL usable in <img src>.
@@ -38,7 +40,9 @@ async function fetchArtifactAsBlobUrl(artifactUrl: string): Promise<string | nul
 }
 
 function buildPrompt(request: StoryRequest): string {
-  if (request.customPrompt) return request.customPrompt;
+  const suffix = request.bedtimeMode ? BEDTIME_SUFFIX : '';
+
+  if (request.customPrompt) return request.customPrompt + suffix;
   return [
     `Write a children's story in English with 3 chapters.`,
     `The hero is ${request.characterName}, a ${request.characterType}.`,
@@ -46,7 +50,7 @@ function buildPrompt(request: StoryRequest): string {
     `The story takes place in the ${request.world}.`,
     `Target age: ${request.ageRange} years old.`,
     `Include ecology lessons and a sense of wonder.`,
-  ].join('\n');
+  ].join('\n') + suffix;
 }
 
 // --- Public API ---

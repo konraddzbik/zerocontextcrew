@@ -30,7 +30,7 @@ export default function LoginPage() {
           initial="hidden"
           animate="visible"
           variants={scaleIn}
-          className={`bg-white rounded-2xl px-10 py-14 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)] ${
+          className={`bg-surface rounded-2xl px-10 py-14 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)] ${
             shaking ? 'animate-shake' : ''
           }`}
         >

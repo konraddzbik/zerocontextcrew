@@ -21,6 +21,7 @@ export default function StoryReaderPage() {
     companion?: string;
     world?: string;
     customPrompt?: string;
+    bedtimeMode?: boolean;
   } | null;
 
   const world = (pickerState?.world || 'forest') as 'forest' | 'ocean' | 'mountains' | 'arctic';
@@ -40,6 +41,7 @@ export default function StoryReaderPage() {
       world: world,
       ageRange: '4-6',
       ...(pickerState?.customPrompt ? { customPrompt: pickerState.customPrompt } : {}),
+      ...(pickerState?.bedtimeMode ? { bedtimeMode: true } : {}),
     };
 
     const handle = generateStory(request, {
@@ -92,7 +94,7 @@ export default function StoryReaderPage() {
     return (
       <PageTransition>
         <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)]">
+          <div className="bg-surface rounded-2xl p-8 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)]">
             <div className="text-5xl mb-4">😔</div>
             <h2 className="font-display text-2xl font-bold text-forest mb-2">
               Oops! Story got lost
@@ -111,7 +113,7 @@ export default function StoryReaderPage() {
                 onClick={() => navigate('/pick')}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="px-6 py-3 rounded-xl bg-white text-forest border-2 border-leaf/20 font-display font-bold cursor-pointer"
+                className="px-6 py-3 rounded-xl bg-surface text-forest border-2 border-leaf/20 font-display font-bold cursor-pointer"
               >
                 Pick a Different Story
               </motion.button>
@@ -131,7 +133,7 @@ export default function StoryReaderPage() {
           onClick={() => navigate('/pick')}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-sm border border-leaf/15 shadow-[0_2px_12px_var(--soft-shadow)] font-body text-sm text-forest cursor-pointer pointer-events-auto"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface/80 backdrop-blur-sm border border-leaf/15 shadow-[0_2px_12px_var(--soft-shadow)] font-body text-sm text-forest cursor-pointer pointer-events-auto"
         >
           <span aria-hidden="true">&larr;</span>
           New Story

@@ -2,11 +2,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { mockStory } from '../lib/mockData';
 import ParentSummary from '../components/ParentSummary';
+import { useBedtime } from '../components/BedtimeContext';
 import { PageTransition, StaggerList, StaggerItem } from '../components/motion';
 
 export default function SummaryPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isBedtime } = useBedtime();
   const story = location.state?.story || mockStory;
 
   return (
@@ -21,13 +23,13 @@ export default function SummaryPage() {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.2 }}
             >
-              🎉
+              {isBedtime ? '\u{1F319}' : '\u{1F389}'}
             </motion.div>
             <h1 className="font-display text-3xl sm:text-4xl font-bold text-forest mb-2">
-              Story Complete!
+              {isBedtime ? 'Sweet Dreams...' : 'Story Complete!'}
             </h1>
             <p className="font-body text-lg text-leaf">
-              "{story.title}" — what an adventure!
+              "{story.title}" — {isBedtime ? 'time to sleep tight!' : 'what an adventure!'}
             </p>
           </div>
 
@@ -57,7 +59,7 @@ export default function SummaryPage() {
               onClick={() => navigate('/story')}
               whileHover={{ scale: 1.04, y: -2 }}
               whileTap={{ scale: 0.97 }}
-              className="px-8 py-3 rounded-xl font-display font-bold text-lg bg-white text-forest border-2 border-leaf/20 hover:border-leaf/40 shadow-sm transition-colors cursor-pointer"
+              className="px-8 py-3 rounded-xl font-display font-bold text-lg bg-surface text-forest border-2 border-leaf/20 hover:border-leaf/40 shadow-sm transition-colors cursor-pointer"
             >
               Read Again
             </motion.button>
