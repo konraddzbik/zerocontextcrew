@@ -548,6 +548,65 @@ h1, h2, h3, h4 {
   box-shadow: 0 4px 20px rgba(212,165,71,0.25);
 }
 
+/* ── Narration button ── */
+.narration-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--gold-muted);
+  background: color-mix(in srgb, var(--gold-muted) 10%, transparent);
+  cursor: default;
+}
+.narration-btn--muted {
+  opacity: 0.55;
+}
+.narration-btn__icon {
+  font-size: 1rem;
+  color: var(--gold);
+  line-height: 1;
+}
+.narration-btn__label {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.narration-btn__play {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  color: var(--gold);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.narration-btn__play:hover {
+  background: color-mix(in srgb, var(--gold) 30%, transparent);
+}
+.narration-btn__play:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+[data-theme="bedtime"] .narration-btn {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+}
+[data-theme="bedtime"] .narration-btn__play {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  box-shadow: 0 0 8px rgba(212,165,71,0.15);
+}
+
 /* ── Storybook Typography ── */
 .chapter-title-book {
   font-family: 'Cinzel Decorative', serif;
