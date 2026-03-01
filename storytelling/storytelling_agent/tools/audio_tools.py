@@ -149,20 +149,16 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
 
         result = {
             "status": "success",
-            "audio_id": audio_id,
+            "chapter": chapter_number,
             "audio_url": audio_url,
+            "duration_seconds_estimate": estimated_duration,
+            "file_size_kb": file_size_kb,
+            # Fields below are for programmatic use (tests, logging).
+            "audio_id": audio_id,
             "audio_file": str(filepath),
             "filename": filename,
             "voice": voice,
-            "voice_id": DEFAULT_VOICE_ID,
-            "duration_seconds_estimate": estimated_duration,
-            "file_size_kb": file_size_kb,
-            "chapter": chapter_number,
             "word_count": word_count,
-            "message": (
-                f"Audio generated for chapter {chapter_number} "
-                f"({word_count} words, ~{estimated_duration}s, {file_size_kb} KB)"
-            ),
         }
 
     except ApiError as exc:
