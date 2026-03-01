@@ -10,8 +10,8 @@ import { PageTransition } from '../components/motion';
 
 const chapterVariants = {
   enter: { opacity: 0, x: 60 },
-  center: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-  exit: { opacity: 0, x: -60, transition: { duration: 0.3, ease: 'easeIn' } },
+  center: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
+  exit: { opacity: 0, x: -60, transition: { duration: 0.3, ease: 'easeIn' as const } },
 };
 
 type Status = 'loading' | 'reading' | 'error';
@@ -33,6 +33,7 @@ export default function StoryReaderPage() {
   const [status, setStatus] = useState<Status>('loading');
   const [story, setStory] = useState<Story | null>(null);
   const [chapters, setChapters] = useState<ChapterType[]>([]);
+  const [totalChapters, setTotalChapters] = useState<number | null>(null);
   const [currentChapter, setCurrentChapter] = useState(0);
   const [choices, setChoices] = useState<Record<string, ChoiceOption>>({});
   const [error, setError] = useState('');
@@ -47,11 +48,12 @@ export default function StoryReaderPage() {
     };
 
     const handle = generateStory(request, {
-      onChapterReady: (newChapters) => {
+      onChapterReady: (newChapters, meta) => {
         setChapters(newChapters);
-        if (newChapters.length === 1) {
-          setStatus('reading');
-        }
+        if (meta.totalChapters) setTotalChapters(meta.totalChapters);
+        // Clamp current index if chapters shrunk (e.g. live preview replaced by confirmed)
+        setCurrentChapter((c) => Math.min(c, Math.max(0, newChapters.length - 1)));
+        if (newChapters.length >= 1) setStatus('reading');
       },
       onTextDelta: () => {
         // Could use for streaming text display in the future
@@ -155,7 +157,7 @@ export default function StoryReaderPage() {
               {story?.title || `${pickerState?.name || 'Your'}'s Adventure`}
             </h1>
             <div className="flex items-center justify-center gap-2 mt-3">
-              {(story?.chapters || chapters).map((_, i) => (
+              {Array.from({ length: totalChapters ?? chapters.length }).map((_, i) => (
                 <motion.div
                   key={i}
                   animate={{
@@ -163,7 +165,7 @@ export default function StoryReaderPage() {
                     backgroundColor:
                       i === currentChapter
                         ? '#f5c542'
-                        : i < currentChapter
+                        : i < chapters.length
                           ? 'rgba(74,124,89,0.6)'
                           : 'rgba(74,124,89,0.2)',
                   }}
@@ -171,7 +173,7 @@ export default function StoryReaderPage() {
                   transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                 />
               ))}
-              {hasMoreComing && (
+              {hasMoreComing && !totalChapters && (
                 <motion.div
                   className="h-2 w-4 rounded-full bg-leaf/10"
                   animate={{ opacity: [0.3, 0.7, 0.3] }}
@@ -235,7 +237,7 @@ export default function StoryReaderPage() {
             </motion.button>
 
             <span className="font-body text-sm text-bark/50">
-              {currentChapter + 1} of {story?.chapters.length || '...'}
+              {currentChapter + 1} of {story?.chapters.length ?? totalChapters ?? '...'}
             </span>
 
             <motion.button

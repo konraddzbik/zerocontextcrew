@@ -15,6 +15,7 @@ from pathlib import Path
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from google.adk.cli.fast_api import get_fast_api_app
 
@@ -35,6 +36,14 @@ AUDIO_DIR = Path(AGENT_DIR) / "generated_audio"
 app: FastAPI = get_fast_api_app(
     agents_dir=AGENT_DIR,
     web=True,
+)
+
+# Allow cross-origin requests from the frontend dev server
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:4173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Ensure the audio output directory exists

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { motion } from 'framer-motion';
 
 type WorldType = 'forest' | 'ocean' | 'mountains' | 'arctic';
@@ -137,7 +138,7 @@ function ArcticScene() {
   );
 }
 
-const scenes: Record<WorldType, () => JSX.Element> = {
+const scenes: Record<WorldType, () => ReactElement> = {
   forest: ForestScene,
   ocean: OceanScene,
   mountains: MountainScene,
