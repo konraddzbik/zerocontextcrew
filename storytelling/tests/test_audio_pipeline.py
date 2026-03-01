@@ -60,9 +60,18 @@ def prepare_test_audio_dir():
 
 @pytest.fixture()
 def mock_tool_context():
-    """Create a mock ToolContext with a working state dict."""
+    """Create a mock ToolContext with a working state dict.
+
+    Uses the same state structure that save_chapter produces:
+    all_chapters is the primary source; current_chapter is an alias.
+    """
     ctx = MagicMock()
-    ctx.state = {"chapter_number": 1}
+    chapter_data = {"text": SAMPLE_TEXT, "chapter_number": 1, "emotion": "happy"}
+    ctx.state = {
+        "chapter_number": 1,
+        "current_chapter": chapter_data,
+        "all_chapters": [chapter_data],
+    }
     return ctx
 
 
@@ -387,12 +396,10 @@ class TestGenerateAudioTool:
             audio_tools.APP_BASE_URL = "http://localhost:8001"
 
             result = await audio_tools.generate_audio(
-                text=SAMPLE_TEXT,
-                voice="rachel",
                 tool_context=mock_tool_context,
             )
 
-            # Verify result structure
+            # Verify flat result — generate_audio returns one chapter's result directly
             assert result["status"] == "success", (
                 f"Expected success, got: {result}"
             )
@@ -446,9 +453,11 @@ class TestGenerateAudioTool:
             # Use the real default so the background server URL matches
             audio_tools.APP_BASE_URL = f"http://localhost:{audio_tools.AUDIO_SERVER_PORT}"
 
+            owl_text = "A little owl hooted softly in the moonlight."
+            owl_chapter = {"text": owl_text, "chapter_number": 2, "emotion": "calm"}
+            mock_tool_context.state["current_chapter"] = owl_chapter
+            mock_tool_context.state["all_audio_results"] = []  # reset so chapter 2 is narrated
             result = await audio_tools.generate_audio(
-                text="A little owl hooted softly in the moonlight.",
-                voice="rachel",
                 tool_context=mock_tool_context,
             )
 
@@ -476,9 +485,10 @@ class TestGenerateAudioTool:
         try:
             audio_tools.ELEVENLABS_API_KEY = "sk_test_fake_key"
 
+            # Empty text — set current_chapter directly (the path generate_audio reads)
+            mock_tool_context.state["current_chapter"] = {"text": "", "chapter_number": 1}
+            mock_tool_context.state["all_audio_results"] = []
             result = await audio_tools.generate_audio(
-                text="",
-                voice="rachel",
                 tool_context=mock_tool_context,
             )
 
@@ -498,8 +508,6 @@ class TestGenerateAudioTool:
             audio_tools.ELEVENLABS_API_KEY = ""
 
             result = await audio_tools.generate_audio(
-                text=SAMPLE_TEXT,
-                voice="rachel",
                 tool_context=mock_tool_context,
             )
 
@@ -521,8 +529,6 @@ class TestGenerateAudioTool:
             audio_tools.ELEVENLABS_API_KEY = "sk_your_elevenlabs_api_key_here"
 
             result = await audio_tools.generate_audio(
-                text=SAMPLE_TEXT,
-                voice="rachel",
                 tool_context=mock_tool_context,
             )
 
@@ -542,8 +548,6 @@ class TestGenerateAudioTool:
             audio_tools.ELEVENLABS_API_KEY = "sk_definitely_not_a_real_key_1234567890"
 
             result = await audio_tools.generate_audio(
-                text=SAMPLE_TEXT,
-                voice="rachel",
                 tool_context=mock_tool_context,
             )
 
@@ -575,13 +579,16 @@ class TestEndToEnd:
             audio_tools.ELEVENLABS_API_KEY = real_api_key
             audio_tools.APP_BASE_URL = f"http://localhost:{audio_tools.AUDIO_SERVER_PORT}"
 
-            # Step 1: Call generate_audio with mock tool context
+            # Step 1: Call generate_audio with mock tool context (all_chapters path)
             mock_ctx = MagicMock()
-            mock_ctx.state = {"chapter_number": 1}
+            chapter_data = {"text": SAMPLE_TEXT, "chapter_number": 1, "emotion": "happy"}
+            mock_ctx.state = {
+                "chapter_number": 1,
+                "current_chapter": chapter_data,
+                "all_chapters": [chapter_data],
+            }
 
             result = await audio_tools.generate_audio(
-                text=SAMPLE_TEXT,
-                voice="rachel",
                 tool_context=mock_ctx,
             )
 

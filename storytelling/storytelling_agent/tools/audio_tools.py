@@ -12,12 +12,13 @@ import logging
 import os
 import uuid
 from pathlib import Path
+from typing import Any
 
 import aiofiles
 from dotenv import load_dotenv
 from elevenlabs import AsyncElevenLabs, VoiceSettings
 from elevenlabs.core import ApiError
-from google.adk.tools import ToolContext
+from google.adk.tools.tool_context import ToolContext
 
 from . import audio_server
 
@@ -38,10 +39,10 @@ DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
 #: Voice settings tuned for soft, calm bedtime narration.
 VOICE_SETTINGS = VoiceSettings(
-    stability=0.85,       # consistent, soothing tone
+    stability=0.85,         # consistent, soothing tone
     similarity_boost=0.78,  # natural while staying in character
-    style=0.15,           # gentle delivery, no dramatic shifts
-    speed=0.85,           # relaxed pacing for children falling asleep
+    style=0.15,             # gentle delivery, no dramatic shifts
+    speed=0.85,             # relaxed pacing for children falling asleep
 )
 
 # Re-export for tests that reference these via audio_tools
@@ -56,27 +57,40 @@ def _ensure_output_dir() -> Path:
     return AUDIO_OUTPUT_DIR
 
 
-async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> dict:
-    """Generate audio narration via ElevenLabs text-to-speech API.
+def _extract_text(chapter_data: Any) -> str:
+    """Extract plain text from a chapter entry.
 
-    Args:
-        text: The story text to convert to speech.
-        voice: The voice name (used for logging; actual voice ID is configured
-               via DEFAULT_VOICE_ID constant).
-        tool_context: ADK tool context for accessing session state.
-
-    Returns:
-        dict with status, file path, and metadata on success,
-        or status "error" with details on failure.
+    Supports both dict (structured from save_chapter) and plain string formats.
     """
-    # Read chapter_number from current_chapter dict (accurate) rather than
-    # top-level state, which already holds the NEXT chapter's number.
-    current_chapter = tool_context.state.get("current_chapter", {})
-    if isinstance(current_chapter, dict) and "chapter_number" in current_chapter:
-        chapter_number = current_chapter["chapter_number"]
-    else:
-        chapter_number = tool_context.state.get("chapter_number", 1)
-    word_count = len(text.split())
+    if isinstance(chapter_data, dict):
+        return chapter_data.get("text", "")
+    return str(chapter_data) if chapter_data else ""
+
+
+async def _generate_one_audio(
+    chapter_data: Any,
+    chapter_number: int,
+    tool_context: ToolContext,
+) -> dict:
+    """Generate audio for a single chapter and persist the result to state.
+
+    Returns a result dict with status, audio_url, and metadata.
+    """
+    text = _extract_text(chapter_data)
+    word_count = len(text.split()) if text else 0
+
+    # --- Validate input text ---
+    if not text or not text.strip():
+        error_msg = f"Cannot generate audio for chapter {chapter_number}: no text found."
+        logger.warning(error_msg)
+        result = {
+            "status": "error",
+            "error_type": "validation",
+            "message": error_msg,
+            "chapter": chapter_number,
+        }
+        _accumulate_result(tool_context.state, result)
+        return result
 
     # --- Validate API key ---
     if not ELEVENLABS_API_KEY or ELEVENLABS_API_KEY.startswith("sk_your_"):
@@ -85,23 +99,14 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
             "Set a valid key in the .env file to enable audio generation."
         )
         logger.error(error_msg)
-        return {
+        result = {
             "status": "error",
             "error_type": "configuration",
             "message": error_msg,
             "chapter": chapter_number,
         }
-
-    # --- Validate input text ---
-    if not text or not text.strip():
-        error_msg = "Cannot generate audio from empty text."
-        logger.warning(error_msg)
-        return {
-            "status": "error",
-            "error_type": "validation",
-            "message": error_msg,
-            "chapter": chapter_number,
-        }
+        _accumulate_result(tool_context.state, result)
+        return result
 
     # Ensure the background file server is running
     audio_server.ensure_running()
@@ -123,14 +128,16 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
         audio_bytes = b"".join(chunks)
 
         if not audio_bytes:
-            error_msg = "ElevenLabs returned empty audio data."
+            error_msg = f"ElevenLabs returned empty audio for chapter {chapter_number}."
             logger.error(error_msg)
-            return {
+            result = {
                 "status": "error",
                 "error_type": "empty_response",
                 "message": error_msg,
                 "chapter": chapter_number,
             }
+            _accumulate_result(tool_context.state, result)
+            return result
 
         # Save audio file to disk
         output_dir = _ensure_output_dir()
@@ -159,16 +166,14 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
             "audio_url": audio_url,
             "duration_seconds_estimate": estimated_duration,
             "file_size_kb": file_size_kb,
-            # Fields below are for programmatic use (tests, logging).
             "audio_id": audio_id,
             "audio_file": str(filepath),
             "filename": filename,
-            "voice": voice,
             "word_count": word_count,
         }
 
     except ApiError as exc:
-        error_msg = f"ElevenLabs API error: {exc}"
+        error_msg = f"ElevenLabs API error for chapter {chapter_number}: {exc}"
         logger.error(error_msg)
         result = {
             "status": "error",
@@ -178,7 +183,7 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
         }
 
     except ConnectionError as exc:
-        error_msg = f"Network error connecting to ElevenLabs: {exc}"
+        error_msg = f"Network error connecting to ElevenLabs (chapter {chapter_number}): {exc}"
         logger.error(error_msg)
         result = {
             "status": "error",
@@ -188,7 +193,7 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
         }
 
     except TimeoutError as exc:
-        error_msg = f"Request to ElevenLabs timed out: {exc}"
+        error_msg = f"Request to ElevenLabs timed out (chapter {chapter_number}): {exc}"
         logger.error(error_msg)
         result = {
             "status": "error",
@@ -198,7 +203,7 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
         }
 
     except OSError as exc:
-        error_msg = f"Failed to save audio file to disk: {exc}"
+        error_msg = f"Failed to save audio file for chapter {chapter_number}: {exc}"
         logger.error(error_msg)
         result = {
             "status": "error",
@@ -208,7 +213,7 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
         }
 
     except Exception as exc:
-        error_msg = f"Unexpected error during audio generation: {exc}"
+        error_msg = f"Unexpected error during audio generation (chapter {chapter_number}): {exc}"
         logger.exception(error_msg)
         result = {
             "status": "error",
@@ -217,9 +222,45 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
             "chapter": chapter_number,
         }
 
-    # Accumulate audio results across chapters (success or failure)
-    audio_results = tool_context.state.get("all_audio_results", [])
-    audio_results.append(result)
-    tool_context.state["all_audio_results"] = audio_results
-
+    _accumulate_result(tool_context.state, result)
     return result
+
+
+async def generate_audio(tool_context: ToolContext) -> dict:
+    """Generate audio narration for the current story chapter.
+
+    Reads state["current_chapter"] — set by save_chapter immediately before
+    this agent runs — and narrates exactly that one chapter via ElevenLabs TTS.
+
+    Called once per loop iteration (after each chapter is written), so there is
+    always exactly one chapter to narrate.  No iteration over all_chapters.
+
+    Args:
+        tool_context: ADK tool context for reading/writing session state.
+
+    Returns:
+        dict with the generation result for the current chapter.
+    """
+    state = tool_context.state
+
+    # Resolve the chapter just written by story_writer_agent
+    current = state.get("current_chapter")
+    if not current:
+        return {"status": "error", "message": "No current_chapter in state."}
+
+    chapter_number: int = (
+        current.get("chapter_number", state.get("chapter_number", 1))
+        if isinstance(current, dict)
+        else state.get("chapter_number", 1)
+    )
+
+    logger.info("Generating audio for chapter %d", chapter_number)
+
+    return await _generate_one_audio(current, chapter_number, tool_context)
+
+
+def _accumulate_result(state: Any, result: dict) -> None:
+    """Append result to all_audio_results in session state."""
+    audio_results = state.get("all_audio_results", [])
+    audio_results.append(result)
+    state["all_audio_results"] = audio_results
