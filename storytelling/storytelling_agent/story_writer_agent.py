@@ -1,6 +1,7 @@
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.models.lite_llm import LiteLlm
+from google.genai import types as genai_types
 
 from .tools.story_tools import save_chapter
 
@@ -11,6 +12,18 @@ def _init_story_state(callback_context: CallbackContext):
     Uses ``not in`` instead of ``not state.get(...)`` to avoid falsy-value bugs:
     ``not 0`` is True, which would reset chapter_number every iteration.
     """
+    # --- Content safety gate ---
+    # If prompt_parser_agent blocked the content, skip story writing entirely.
+    # Returns Content to bypass the LLM — no chapter is written, no API call made.
+    if callback_context.state.get("content_blocked"):
+        reason = callback_context.state.get(
+            "block_reason", "Content not suitable for children."
+        )
+        return genai_types.Content(
+            role="model",
+            parts=[genai_types.Part(text=f"STORY BLOCKED: {reason}")],
+        )
+
     if "story_so_far" not in callback_context.state:
         callback_context.state["story_so_far"] = "(No story written yet)"
     if "chapter_number" not in callback_context.state:
