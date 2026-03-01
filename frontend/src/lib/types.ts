@@ -41,6 +41,8 @@ export interface ChoiceOption {
   lessonTag: string;
 }
 
+export type BookState = 'closed' | 'opening' | 'reading' | 'ended';
+
 export interface ParentSummary {
   lessonsLearned: string[];
   ecoFactsCovered: string[];
