@@ -15,7 +15,7 @@ export interface Story {
 
 export interface Chapter {
   id: string;
-  chapterNumber: 1 | 2 | 3;
+  chapterNumber: number;
   title: string;
   text: string;
   illustrations: Illustration[];

@@ -1,3 +1,8 @@
+export interface ADKFunctionCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
 export interface ADKEvent {
   id: string;
   invocationId: string;
@@ -5,7 +10,11 @@ export interface ADKEvent {
   timestamp: number;
   content: {
     role: string;
-    parts: { text?: string; functionCall?: unknown; functionResponse?: unknown }[];
+    parts: {
+      text?: string;
+      functionCall?: ADKFunctionCall;
+      functionResponse?: unknown;
+    }[];
   };
   partial: boolean;
   actions: {
@@ -48,14 +57,26 @@ export async function connectSSE(
       signal,
     });
   } catch (err) {
-    callbacks.onError(
-      err instanceof Error ? err : new Error('Failed to connect to story server'),
-    );
+    if (signal?.aborted) return;
+    const message =
+      err instanceof TypeError
+        ? `Cannot reach server at ${baseUrl}. Is the backend running?`
+        : err instanceof Error
+          ? err.message
+          : 'Failed to connect to story server';
+    callbacks.onError(new Error(message));
     return;
   }
 
   if (!response.ok) {
-    callbacks.onError(new Error(`Server error: ${response.status} ${response.statusText}`));
+    let detail = `Server error: ${response.status} ${response.statusText}`;
+    try {
+      const text = await response.text();
+      if (text) detail += ` — ${text.slice(0, 200)}`;
+    } catch {
+      // ignore read errors on error response
+    }
+    callbacks.onError(new Error(detail));
     return;
   }
 
@@ -75,15 +96,15 @@ export async function connectSSE(
 
       buffer += decoder.decode(value, { stream: true });
 
-      // SSE format: lines starting with "data: " separated by \n\n
+      // SSE format: lines starting with "data: " separated by \n
       const lines = buffer.split('\n');
       buffer = '';
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // If this is the last line and doesn't end with \n, it's incomplete — buffer it
-        if (i === lines.length - 1 && !buffer && line !== '') {
+        // Last line may be incomplete — buffer it for the next chunk
+        if (i === lines.length - 1 && line !== '') {
           buffer = line;
           continue;
         }
