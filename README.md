@@ -22,7 +22,6 @@ Built for **Mistral AI Hackathon 2026**.
 - **Bedtime mode** — dark muted palette, toggled from the story picker
 - **Content safety** — two-layer filter blocks inappropriate themes before story generation begins
 - **Progressive loading** — text appears immediately, illustrations and audio arrive asynchronously while you read
-- **Parent summary** — lessons learned, eco facts, and choices recap at the end
 
 ## How It Works
 
@@ -43,8 +42,8 @@ Login  -->  Pick Your Adventure  -->  3D Storybook  -->  Summary
 |-------|------------|
 | Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 4, Framer Motion |
 | Backend | Python 3.13, Google ADK (multi-agent), FastAPI, LiteLLM |
-| Story LLM | Mistral via LiteLLM |
-| Illustrations | Mistral Image Gen API (fallback: Pollinations, placeholder) |
+| Story LLM | Mistral Large (`mistral-large-latest`) via LiteLLM |
+| Illustrations | Mistral Image Gen (`mistral-medium-2505`, fallback: Pollinations) |
 | Voice narration | ElevenLabs TTS |
 | Deployment | Docker Compose (backend + frontend) |
 
@@ -55,27 +54,31 @@ Login  -->  Pick Your Adventure  -->  3D Storybook  -->  Summary
 Requires Docker and Docker Compose v2.
 
 ```bash
-# 1. Configure API keys
+# 1. Configure backend env
 cp storytelling/.env.example storytelling/.env
-# Edit storytelling/.env — set MISTRAL_API_KEY and ELEVENLABS_API_KEY
+# Edit storytelling/.env — fill in MISTRAL_API_KEY and ELEVENLABS_API_KEY
 
 # 2. Launch
-./start.sh
+docker compose up --build
 
 # Frontend → http://localhost:4173
 # Backend  → http://localhost:8000
 ```
 
-The `start.sh` helper supports additional commands:
+To stop:
 
 ```bash
-./start.sh --build   # force-rebuild images (needed after changing VITE_* env vars)
-./start.sh down      # stop and remove containers
-./start.sh logs      # follow logs from all services
+docker compose down
 ```
 
-The stack consists of two services defined in `docker-compose.yml`:
-- **backend** — FastAPI + ADK agents, serves API on port 8000 (includes `/audio` static mount for narration files)
+To rebuild after changing env vars or code:
+
+```bash
+docker compose up --build
+```
+
+The stack consists of two services:
+- **backend** — FastAPI + ADK agents, port 8000 (includes `/audio` static mount for narration files)
 - **frontend** — Vite production build served on port 4173
 
 Audio files are persisted in a Docker volume (`audio_files`) between restarts. The backend includes a health check — the frontend container waits for it before starting.
@@ -110,7 +113,7 @@ npm install
 npm run dev -- --host 0.0.0.0                       # port 5173
 ```
 
-Set `VITE_API_MODE=local` in `frontend/.env` to connect to the backend. With `VITE_API_MODE=mock` (default) the frontend uses a hardcoded story — no backend needed.
+Set `VITE_API_MODE=local` in `frontend/.env` to connect to the backend. With `VITE_API_MODE=mock` the frontend uses a hardcoded story — no backend needed.
 
 **Default login:** `storyteller` / `taleworld`
 
@@ -221,18 +224,28 @@ Typography: **Cinzel Decorative** (titles, dropcaps), **Crimson Text** (story bo
 
 ### Backend (`storytelling/.env`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MISTRAL_API_KEY` | Yes | Mistral API (LLM + Image Gen) |
-| `ELEVENLABS_API_KEY` | Yes | ElevenLabs TTS |
+Copy `storytelling/.env.example` to `storytelling/.env` and fill in the required values.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `MISTRAL_API_KEY` | Yes | — | Mistral API key (story LLM + image generation) |
+| `ELEVENLABS_API_KEY` | Yes | — | ElevenLabs TTS API key |
+| `ELEVENLABS_MOCK` | No | `false` | Set `true` to generate silent MP3 placeholders instead of calling ElevenLabs (saves credits during UI dev) |
+| `IMAGE_PROVIDER` | No | `mistral_imagegen` | Image generation provider (`mistral_imagegen` or `pollinations`) |
+| `AUDIO_SERVER_PORT` | No | `8001` | Port for the background audio file server (local dev only; Docker uses the `/audio` static mount instead) |
+| `APP_BASE_URL` | No | `http://localhost:8001` | Base URL for serving audio files. Override to `http://localhost:8000/audio` when running via Docker Compose |
+| `OUTPUT_DIR` | No | `/tmp/storytime_images` | Directory where generated illustration images are saved |
+| `LOG_LEVEL` | No | `INFO` | Python logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 
 ### Frontend (`frontend/.env`)
+
+Copy `frontend/.env.example` to `frontend/.env`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `VITE_AUTH_USERNAME` | `storyteller` | Login username |
 | `VITE_AUTH_PASSWORD` | `taleworld` | Login password |
-| `VITE_API_MODE` | `mock` | `mock` = hardcoded data, `local` = ADK backend |
+| `VITE_API_MODE` | `local` | `mock` = hardcoded story (no backend needed), `local` = live ADK backend |
 | `VITE_API_BASE_URL` | `http://localhost:8000` | Backend URL |
 
 ## Content Safety
