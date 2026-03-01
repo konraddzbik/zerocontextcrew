@@ -475,14 +475,14 @@ async def generate_images(tool_context: ToolContext) -> dict:
         # Filter to only unillustrated chapters
         chapters_to_illustrate = [
             ch for ch in all_chapters
-            if ch.get("chapter_number", 0) not in illustrated_chapters
+            if ch.get("chapter_number", 1) not in illustrated_chapters
         ]
     else:
         # Fallback: use current_chapter (legacy path)
         parsed = _parse_chapter(state)
         if not parsed:
             return {"status": "error", "message": "No chapters to illustrate in state"}
-        chapter_num = parsed.get("chapter_number", 0)
+        chapter_num = parsed.get("chapter_number", 1)
         if chapter_num in illustrated_chapters:
             return {"status": "skipped", "message": f"Chapter {chapter_num} already illustrated"}
         chapters_to_illustrate = [parsed]

@@ -3,6 +3,7 @@ from google.adk.tools import ToolContext
 
 def save_chapter(
     chapter_text: str,
+    current_chapter_summary: str,
     scene_description: str,
     characters: list[dict],
     emotion: str,
@@ -14,6 +15,7 @@ def save_chapter(
 
     Args:
         chapter_text: The full text of the newly generated chapter.
+        current_chapter_summary: a 1-2 sentence summary of the chapter you just wrote, for the prompt of the next chapter. 
         scene_description: A short (1-2 sentences) visual description of the main scene
             for the illustrator. Describe what should be DRAWN, not what happens in the plot.
         characters: List of characters appearing in this chapter.
@@ -31,16 +33,17 @@ def save_chapter(
     except (TypeError, ValueError):
         total_chapters = 3
     try:
-        current_chapter_num = int(tool_context.state.get("chapter_number", 0))
+        chapter_number = int(tool_context.state.get("chapter_number", 1))
     except (TypeError, ValueError):
-        current_chapter_num = 0
+        chapter_number = 1
 
-    # Guard 1: prevent writing past the planned chapter count
-    if current_chapter_num >= total_chapters:
+    # Guard 1: prevent writing past the planned chapter count.
+    # chapter_number is 1-based (1 = first chapter), so reject only when > total.
+    if chapter_number > total_chapters:
         tool_context.actions.escalate = True
         return {
             "status": "rejected",
-            "reason": f"Story is already complete ({current_chapter_num}/{total_chapters} chapters). STOP writing.",
+            "reason": f"Story is already complete ({chapter_number - 1}/{total_chapters} chapters). STOP writing.",
             "instruction": "The story is FINISHED. Do NOT write more chapters. STOP now.",
         }
 
@@ -54,10 +57,13 @@ def save_chapter(
     # thinks its job is done and stops calling tools. "rejected" causes Mistral
     # to retry indefinitely. After 2 attempts, escalate to force-stop the LLM
     # (SequentialAgent ignores escalate, so media_agent still runs).
-    if current_chapter_num > 0:
+    #
+    # With 1-based numbering, chapter_number > 1 means this is chapter 2+,
+    # so we check that the PREVIOUS chapter (chapter_number - 1) is illustrated.
+    if chapter_number > 1:
         history: list = tool_context.state.get("illustration_history", [])
         illustrated: set[int] = {entry["chapter"] for entry in history}
-        if current_chapter_num not in illustrated:
+        if (chapter_number - 1) not in illustrated:
             reject_count = int(tool_context.state.get("_chapter_guard_rejects", 0)) + 1
             tool_context.state["_chapter_guard_rejects"] = reject_count
 
@@ -70,23 +76,28 @@ def save_chapter(
 
             return {
                 "status": "completed",
-                "chapter_number": current_chapter_num,
+                "chapter_number": chapter_number - 1,
                 "total_chapters": total_chapters,
                 "message": (
-                    f"Chapter {current_chapter_num} is saved. Writing for this turn is DONE. "
+                    f"Chapter {chapter_number - 1} is saved. Writing for this turn is DONE. "
                     "The next chapter will be written automatically after illustration. "
                     "Do NOT call save_chapter. Simply confirm your work is done."
                 ),
             }
 
-    chapter_number = current_chapter_num + 1
+    # With 1-based numbering, chapter_number IS the chapter — no pre-increment.
+    # Increment state AFTER saving so the next iteration sees chapter_number + 1.
     story_so_far = tool_context.state.get("story_so_far", "")
 
     separator = f"\n\n--- Chapter {chapter_number} ---\n\n"
     story_so_far += separator + chapter_text
 
+    story_so_far_summary = tool_context.state.get("story_so_far_summary", "")
+    story_so_far_summary += separator + current_chapter_summary
+    tool_context.state["story_so_far_summary"] = story_so_far_summary
+
     tool_context.state["story_so_far"] = story_so_far
-    tool_context.state["chapter_number"] = chapter_number
+    tool_context.state["chapter_number"] = chapter_number + 1
 
     chapter_data = {
         "text": chapter_text,

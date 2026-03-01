@@ -25,15 +25,19 @@ def _init_story_state(callback_context: CallbackContext):
         )
 
     if "story_so_far" not in callback_context.state:
-        callback_context.state["story_so_far"] = "(No story written yet)"
+        callback_context.state["story_so_far"] = ""
+    if "story_so_far_summary" not in callback_context.state:
+        callback_context.state["story_so_far_summary"] = ""
     if "chapter_number" not in callback_context.state:
-        callback_context.state["chapter_number"] = 0
+        callback_context.state["chapter_number"] = 1
     if "language" not in callback_context.state:
         callback_context.state["language"] = "English"
     if "total_chapters" not in callback_context.state:
         callback_context.state["total_chapters"] = 3
     if "current_chapter" not in callback_context.state:
         callback_context.state["current_chapter"] = ""
+    if "current_chapter_summary" not in callback_context.state:
+        callback_context.state["current_chapter_summary"] = ""
     # Reset per-iteration guard counter (used by save_chapter Guard 2)
     callback_context.state["_chapter_guard_rejects"] = 0
 
@@ -49,7 +53,7 @@ Use the user's message in the conversation as the story request.
 Write the story in: {language}
 
 Story written so far:
-{story_so_far}
+{story_so_far_summary}
 
 Current chapter number: {chapter_number}
 Total chapters planned: {total_chapters}
@@ -69,6 +73,7 @@ After writing the chapter, you MUST call save_chapter with ALL of these argument
 - scene_description: ALWAYS IN ENGLISH, regardless of story language. A SHORT (1-2 sentences) visual description of the main scene for an illustrator. Describe what should be DRAWN — setting, character positions, key visual elements. Example: "A small white bunny stands at the entrance of a glowing crystal cave, surrounded by colorful butterflies."
 - characters: a list of the MAIN characters in this chapter (max 4), each with "name" and "role". The "role" MUST be a SHORT English word describing what the character IS (species or type), NOT a description. Example: [{"name": "Luna", "role": "bunny"}, {"name": "Max", "role": "fox"}]. Good roles: "dog", "cat", "puppy", "boy", "girl", "wizard". Bad roles: "a brave young fox who loves adventure" — too long!
 - emotion: the dominant mood — one of: happy, sad, excited, scared, curious, calm, mysterious, funny, adventurous
+- current_chapter_summary: a 1-2 sentence summary of the chapter you just wrote, for the prompt of the next chapter. Example: "Luna the bunny discovers a magical cave and meets Max the fox, who becomes her friend."
 
 Do NOT say anything after calling the tool. STOP immediately.""",
     tools=[save_chapter],

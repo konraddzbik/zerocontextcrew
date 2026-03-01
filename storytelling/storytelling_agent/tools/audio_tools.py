@@ -69,7 +69,13 @@ async def generate_audio(text: str, voice: str, tool_context: ToolContext) -> di
         dict with status, file path, and metadata on success,
         or status "error" with details on failure.
     """
-    chapter_number = tool_context.state.get("chapter_number", 1)
+    # Read chapter_number from current_chapter dict (accurate) rather than
+    # top-level state, which already holds the NEXT chapter's number.
+    current_chapter = tool_context.state.get("current_chapter", {})
+    if isinstance(current_chapter, dict) and "chapter_number" in current_chapter:
+        chapter_number = current_chapter["chapter_number"]
+    else:
+        chapter_number = tool_context.state.get("chapter_number", 1)
     word_count = len(text.split())
 
     # --- Validate API key ---
