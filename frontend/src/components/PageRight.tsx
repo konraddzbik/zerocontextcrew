@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import LoadingQuill from './LoadingQuill';
+import { PageCorners } from './PageOrnaments';
 
 interface PageRightProps {
   imageUrl?: string;
   altText?: string;
+  chapterTitle?: string;
   pageNumber: number;
 }
 
-export default function PageRight({ imageUrl, altText, pageNumber }: PageRightProps) {
+export default function PageRight({ imageUrl, altText, chapterTitle, pageNumber }: PageRightProps) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
   return (
     <div className="page-right relative flex flex-col items-center justify-center h-full p-6 md:p-8 pb-16">
+      <PageCorners />
+
       <div className="relative flex-1 w-full flex items-center justify-center overflow-hidden">
         {imageUrl && imageUrl.length > 0 && !error ? (
           <>
@@ -40,8 +44,8 @@ export default function PageRight({ imageUrl, altText, pageNumber }: PageRightPr
         )}
       </div>
 
-      {/* Scene description */}
-      {altText && loaded && (
+      {/* Caption below illustration */}
+      {chapterTitle && loaded && (
         <p
           className="mt-2 text-center"
           style={{
@@ -52,7 +56,7 @@ export default function PageRight({ imageUrl, altText, pageNumber }: PageRightPr
             opacity: 0.45,
           }}
         >
-          {altText}
+          Illustration for {chapterTitle}
         </p>
       )}
 

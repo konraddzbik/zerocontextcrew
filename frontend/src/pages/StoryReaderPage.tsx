@@ -124,7 +124,23 @@ export default function StoryReaderPage() {
 
   // --- Reading state (Storybook UI) ---
   return (
-    <>
+    <div className="relative">
+      {/* App header — back navigation */}
+      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 pointer-events-none">
+        <motion.button
+          onClick={() => navigate('/pick')}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-sm border border-leaf/15 shadow-[0_2px_12px_var(--soft-shadow)] font-body text-sm text-forest cursor-pointer pointer-events-auto"
+        >
+          <span aria-hidden="true">&larr;</span>
+          New Story
+        </motion.button>
+        <span className="font-display font-bold text-forest/40 text-sm pointer-events-auto">
+          TaleWorld
+        </span>
+      </div>
+
       <Book
         chapters={chapters}
         title={storyTitle}
@@ -142,6 +158,6 @@ export default function StoryReaderPage() {
         totalChapters={totalChapters}
         hasMoreComing={hasMoreComing}
       />
-    </>
+    </div>
   );
 }

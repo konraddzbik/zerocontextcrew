@@ -17,6 +17,18 @@ export function TopVignette() {
   );
 }
 
+/** Corner ornaments for ornate page borders — positioned via CSS .page-corner-* */
+export function PageCorners() {
+  return (
+    <>
+      <span className="page-corner page-corner-tl" aria-hidden="true">&#10087;</span>
+      <span className="page-corner page-corner-tr" aria-hidden="true">&#10087;</span>
+      <span className="page-corner page-corner-bl" aria-hidden="true">&#10087;</span>
+      <span className="page-corner page-corner-br" aria-hidden="true">&#10087;</span>
+    </>
+  );
+}
+
 export function FrameCorners() {
   const style = (pos: 'tl' | 'tr' | 'bl' | 'br'): React.CSSProperties => {
     const base: React.CSSProperties = {

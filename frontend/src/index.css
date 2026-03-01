@@ -128,17 +128,30 @@ h1, h2, h3, h4 {
 .book-scene {
   perspective: 2000px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   position: relative;
-  /* Deep vignette — darker corners, lighter center */
+  padding: 2rem 1rem;
+  /* Warm background matching app aesthetic — cream with soft nature vignette */
   background:
-    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%),
-    radial-gradient(ellipse at bottom, #5c4033, var(--table));
+    radial-gradient(ellipse at center, transparent 50%, rgba(26,58,42,0.06) 100%),
+    radial-gradient(ellipse at bottom, rgba(107,66,38,0.06) 0%, transparent 60%),
+    var(--cream);
 }
 
-/* Heavy shadow under book — on the "table" */
+/* Stage — grid overlay so cover + spread can overlap during opening */
+.book-stage {
+  display: grid;
+  place-items: center;
+}
+.book-stage-layer {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+/* Soft shadow under book */
 .book-shadow {
   position: absolute;
   bottom: calc(50% - min(35vh, 325px) - 30px);
@@ -146,7 +159,7 @@ h1, h2, h3, h4 {
   transform: translateX(-50%);
   width: min(75vw, 850px);
   height: 40px;
-  background: radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(26,58,42,0.12) 0%, transparent 70%);
   filter: blur(12px);
   z-index: 0;
   pointer-events: none;
@@ -162,7 +175,7 @@ h1, h2, h3, h4 {
     repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(139,109,76,0.03) 30px, rgba(139,109,76,0.03) 31px),
     repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(139,109,76,0.02) 30px, rgba(139,109,76,0.02) 31px);
   border-radius: 4px 12px 12px 4px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 0 80px rgba(139,109,76,0.1);
+  box-shadow: 0 10px 40px var(--soft-shadow), 0 2px 8px rgba(0,0,0,0.08), inset 0 0 80px rgba(139,109,76,0.1);
   position: relative;
   transform-style: preserve-3d;
   transform: perspective(2000px) rotateY(-2deg) rotateX(1deg);
@@ -247,13 +260,68 @@ h1, h2, h3, h4 {
   z-index: -1;
 }
 
-/* ── Page curvature (inset shadows at spine) ── */
+/* ── Ornate page styling — illuminated manuscript ── */
+.page-left,
+.page-right {
+  position: relative;
+  /* Aged parchment stains */
+  background-image:
+    radial-gradient(ellipse at 80% 12%, rgba(139,109,76,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 85%, rgba(139,109,76,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(139,109,76,0.02) 0%, transparent 70%);
+}
+
+/* Page curvature (inset shadows at spine) */
 .page-left {
   box-shadow: inset -20px 0 30px -15px rgba(0,0,0,0.08);
+  overflow: hidden; /* text is paginated, not scrolled */
 }
 .page-right {
   box-shadow: inset 20px 0 30px -15px rgba(0,0,0,0.08);
 }
+
+/* Outer ornate border */
+.page-left::before,
+.page-right::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  border: 2px solid rgba(139,105,20,0.22);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Inner ornate border — double frame effect */
+.page-left::after,
+.page-right::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  border: 1px solid rgba(139,105,20,0.13);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Corner ornament (positioned by PageOrnaments FrameCorners) */
+.page-corner {
+  position: absolute;
+  z-index: 6;
+  color: var(--gold-muted);
+  opacity: 0.5;
+  font-size: 1.3rem;
+  line-height: 1;
+  pointer-events: none;
+}
+.page-corner-tl { top: 1px; left: 2px; }
+.page-corner-tr { top: 1px; right: 2px; transform: scaleX(-1); }
+.page-corner-bl { bottom: 1px; left: 2px; transform: scaleY(-1); }
+.page-corner-br { bottom: 1px; right: 2px; transform: scale(-1); }
 
 /* ── Book Cover 3D ── */
 .book-cover {
@@ -340,7 +408,7 @@ h1, h2, h3, h4 {
     inset -1px -1px 2px rgba(0,0,0,0.15);
 }
 
-/* ── Illustration — painted on page, not framed ── */
+/* ── Illustration — ornate gold frame, painted on page ── */
 .illustration-on-page {
   max-width: 100%;
   max-height: 100%;
@@ -349,6 +417,12 @@ h1, h2, h3, h4 {
   mix-blend-mode: multiply;
   opacity: 0.95;
   filter: saturate(0.9) contrast(0.95);
+  border: 3px solid rgba(139,105,20,0.25);
+  box-shadow:
+    inset 0 0 0 2px rgba(139,105,20,0.08),
+    0 2px 12px rgba(0,0,0,0.1);
+  padding: 3px;
+  background: rgba(139,105,20,0.04);
 }
 
 /* ── Decorative page bottom border ── */
@@ -389,13 +463,26 @@ h1, h2, h3, h4 {
   text-align: justify;
 }
 
+/* Decorative initial — inline on continuation pages, stays on same line */
 .dropcap {
   font-family: 'Cinzel Decorative', serif;
+  font-size: 2rem;
+  line-height: 1;
+  margin-right: 2px;
+  color: var(--dropcap);
+  text-shadow: 1px 1px 2px rgba(139,105,20,0.15);
+}
+
+/* Illuminated initial — gold-backed floated dropcap on chapter first page */
+.dropcap-first {
   font-size: 3.8rem;
   float: left;
   line-height: 0.75;
-  margin: 4px 10px 0 0;
-  color: var(--dropcap);
+  margin: 4px 10px 4px 0;
+  padding: 6px 8px 8px 6px;
+  background:
+    linear-gradient(135deg, rgba(212,165,71,0.12) 0%, rgba(139,105,20,0.06) 50%, transparent 80%);
+  border: 1.5px solid rgba(139,105,20,0.18);
 }
 
 /* ── Book Page Scrollbar ── */
@@ -497,4 +584,43 @@ h1, h2, h3, h4 {
   .book-shadow {
     display: none;
   }
+  .book-nav {
+    bottom: 1rem;
+  }
+}
+
+/* Navigation bar below the book */
+.book-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.2rem;
+}
+.book-nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--gold);
+  background: rgba(139,105,20,0.1);
+  border: 1.5px solid var(--gold-muted);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.book-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.book-nav-info {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ink);
+  opacity: 0.5;
+  min-width: 100px;
+  text-align: center;
 }

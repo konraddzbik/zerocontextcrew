@@ -1,58 +1,111 @@
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTypewriter } from '../hooks/useTypewriter';
-import { TopVignette } from './PageOrnaments';
+import { TopVignette, PageCorners } from './PageOrnaments';
 import AudioPlayer from './AudioPlayer';
 import type { Chapter, ChoiceOption } from '../lib/types';
 
 interface PageLeftProps {
   chapter: Chapter;
+  textContent: string;
+  isFirstTextPage: boolean;
+  isLastTextPage: boolean;
   onChoice: (chapterId: string, option: ChoiceOption) => void;
   selectedChoiceId?: string;
   isFinal: boolean;
   onTurnPage: () => void;
+  onAutoTurn: () => void;
+  onTextComplete?: () => void;
+  rightTextDone?: boolean;
   pageNumber: number;
 }
 
 export default function PageLeft({
   chapter,
+  textContent,
+  isFirstTextPage,
+  isLastTextPage,
   onChoice,
   selectedChoiceId,
   isFinal,
   onTurnPage,
+  onAutoTurn,
+  onTextComplete,
+  rightTextDone,
   pageNumber,
 }: PageLeftProps) {
-  const { displayed, isDone } = useTypewriter(chapter.text, 80);
-  const firstLetter = displayed[0] || '';
-  const restText = displayed.slice(1);
+  const { displayed, isDone } = useTypewriter(textContent, 50);
   const hasChoices = !!chapter.choice?.options?.length;
   const choiceMade = !!selectedChoiceId;
-  const showTurnPage = isDone && !isFinal && (!hasChoices || choiceMade);
+
+  // When right page has text, wait for it to finish before showing choices/end
+  const allTextDone = isDone && (rightTextDone === undefined || rightTextDone);
+  const showFinish = allTextDone && isLastTextPage && isFinal && (!hasChoices || choiceMade);
+
+  // Signal typewriter completion to parent (for right-page coordination)
+  const textCompleteFiredRef = useRef(false);
+  useEffect(() => { textCompleteFiredRef.current = false; }, [textContent]);
+
+  useEffect(() => {
+    if (isDone && onTextComplete && !textCompleteFiredRef.current) {
+      textCompleteFiredRef.current = true;
+      onTextComplete();
+    }
+  }, [isDone, onTextComplete]);
+
+  // Auto page-turn when typewriter finishes on a non-last text page (3s delay)
+  // Only when there's no right text page (right page handles auto-turn in dual mode)
+  const autoTurnedRef = useRef(false);
+  useEffect(() => { autoTurnedRef.current = false; }, [textContent]);
+
+  useEffect(() => {
+    if (isDone && !isLastTextPage && !onTextComplete) {
+      const timer = setTimeout(() => {
+        if (!autoTurnedRef.current) {
+          autoTurnedRef.current = true;
+          onAutoTurn();
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isDone, isLastTextPage, onAutoTurn, onTextComplete]);
+
+  // Dropcap on every page — illuminated on first page, inline on others
+  const firstLetter = displayed[0] || '';
+  const restText = displayed.slice(1);
+  const dropcapClass = isFirstTextPage ? 'dropcap dropcap-first' : 'dropcap';
 
   return (
-    <div className="page-left relative flex flex-col h-full p-6 md:p-8 pb-16 book-page-scroll">
-      {/* Audio — small, top-right */}
-      {chapter.audioUrl && (
+    <div className="page-left relative flex flex-col h-full p-6 md:p-8 pb-16">
+      <PageCorners />
+
+      {/* Audio — small, top-right, only on first text page */}
+      {isFirstTextPage && chapter.audioUrl && (
         <div className="absolute top-3 right-3 z-10 scale-75 origin-top-right">
           <AudioPlayer audioUrl={chapter.audioUrl} chapterTitle={chapter.title} />
         </div>
       )}
 
-      {/* Ornament + title */}
-      <TopVignette />
-      <h2 className="chapter-title-book">
-        {chapter.title.startsWith('Chapter') ? chapter.title : `Chapter ${chapter.chapterNumber}: ${chapter.title}`}
-      </h2>
+      {/* Ornament + title — only on first text page */}
+      {isFirstTextPage && (
+        <>
+          <TopVignette />
+          <h2 className="chapter-title-book">
+            {chapter.title.startsWith('Chapter') ? chapter.title : `Chapter ${chapter.chapterNumber}: ${chapter.title}`}
+          </h2>
+        </>
+      )}
 
-      {/* Story text with dropcap */}
-      <div className="story-text-book flex-1">
-        {firstLetter && <span className="dropcap">{firstLetter}</span>}
+      {/* Story text */}
+      <div className="story-text-book flex-1" style={{ overflow: 'hidden' }}>
+        {firstLetter && <span className={dropcapClass}>{firstLetter}</span>}
         <span style={{ whiteSpace: 'pre-line' }}>{restText}</span>
         {!isDone && <span className="typewriter-cursor" />}
       </div>
 
-      {/* Choices — slide up after typewriter finishes */}
+      {/* Choices — only on last text page */}
       <AnimatePresence>
-        {isDone && hasChoices && (
+        {allTextDone && isLastTextPage && hasChoices && (
           <motion.div
             className="mt-4 space-y-2"
             initial={{ opacity: 0, y: 20 }}
@@ -91,25 +144,25 @@ export default function PageLeft({
         )}
       </AnimatePresence>
 
-      {/* Turn page button */}
-      {showTurnPage && (
+      {/* Finish button — last text page of final chapter */}
+      {showFinish && (
         <motion.button
           onClick={onTurnPage}
-          className="mt-4 self-end px-5 py-2 rounded-lg cursor-pointer"
+          className="mt-4 self-center px-6 py-2.5 rounded-lg cursor-pointer"
           style={{
             fontFamily: "'Cinzel Decorative', serif",
-            fontSize: '0.85rem',
+            fontSize: '0.9rem',
             color: 'var(--gold)',
-            border: '1px solid var(--gold-muted)',
+            border: '1.5px solid var(--gold-muted)',
             background: 'transparent',
           }}
           whileHover={{ scale: 1.05, backgroundColor: 'rgba(212,165,71,0.1)' }}
           whileTap={{ scale: 0.95 }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.5 }}
         >
-          Turn page &rarr;
+          The End &hearts;
         </motion.button>
       )}
 

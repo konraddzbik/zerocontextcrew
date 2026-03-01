@@ -4,9 +4,11 @@ interface BookCoverProps {
   title: string;
   onOpen: () => void;
   isOpening: boolean;
+  isReady: boolean;
+  onOpenComplete?: () => void;
 }
 
-export default function BookCover({ title, onOpen, isOpening }: BookCoverProps) {
+export default function BookCover({ title, onOpen, isOpening, isReady, onOpenComplete }: BookCoverProps) {
   return (
     <motion.div
       className="book-cover cursor-pointer select-none"
@@ -16,13 +18,14 @@ export default function BookCover({ title, onOpen, isOpening }: BookCoverProps) 
         background: 'linear-gradient(135deg, var(--leather), var(--leather-dark))',
         borderRadius: '4px 12px 12px 4px',
         boxShadow:
-          '0 10px 40px rgba(0,0,0,0.5), inset 0 0 0 12px rgba(139,105,20,0.15), inset 0 0 0 14px rgba(139,105,20,0.3)',
+          '0 10px 40px rgba(26,58,42,0.2), 0 4px 16px rgba(0,0,0,0.12), inset 0 0 0 12px rgba(139,105,20,0.15), inset 0 0 0 14px rgba(139,105,20,0.3)',
         transformOrigin: 'left center',
         transformStyle: 'preserve-3d',
+        backfaceVisibility: 'hidden',
       }}
       animate={
         isOpening
-          ? { rotateY: -180, opacity: [1, 1, 0] }
+          ? { rotateY: -180 }
           : { rotateY: 0 }
       }
       transition={
@@ -30,7 +33,10 @@ export default function BookCover({ title, onOpen, isOpening }: BookCoverProps) 
           ? { duration: 1.8, ease: [0.645, 0.045, 0.355, 1] }
           : undefined
       }
-      onClick={!isOpening ? onOpen : undefined}
+      onAnimationComplete={() => {
+        if (isOpening && onOpenComplete) onOpenComplete();
+      }}
+      onClick={!isOpening && isReady ? onOpen : undefined}
     >
       {/* Embossed frames */}
       <div className="cover-emboss" />
@@ -68,24 +74,46 @@ export default function BookCover({ title, onOpen, isOpening }: BookCoverProps) 
           <div className="cover-emblem">🦋</div>
         </div>
 
-        {/* Open button */}
+        {/* Open button or loading state */}
         {!isOpening && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <span
-              style={{
-                fontFamily: "'Crimson Text', serif",
-                fontStyle: 'italic',
-                fontSize: '1.1rem',
-                color: 'var(--gold)',
-                opacity: 0.7,
-              }}
-            >
-              Tap to open...
-            </span>
+            {isReady ? (
+              <motion.button
+                onClick={(e) => { e.stopPropagation(); onOpen(); }}
+                className="cursor-pointer"
+                style={{
+                  fontFamily: "'Cinzel Decorative', serif",
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  color: 'var(--gold)',
+                  background: 'rgba(139,105,20,0.15)',
+                  border: '1.5px solid var(--gold-muted)',
+                  borderRadius: '8px',
+                  padding: '10px 28px',
+                  letterSpacing: '0.06em',
+                }}
+                whileHover={{ scale: 1.05, backgroundColor: 'rgba(139,105,20,0.3)' }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Open the Book
+              </motion.button>
+            ) : (
+              <span
+                style={{
+                  fontFamily: "'Crimson Text', serif",
+                  fontStyle: 'italic',
+                  fontSize: '1.1rem',
+                  color: 'var(--gold)',
+                  opacity: 0.6,
+                }}
+              >
+                Crafting your tale...
+              </span>
+            )}
           </motion.div>
         )}
       </div>
