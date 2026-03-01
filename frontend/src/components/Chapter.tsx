@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import type { Chapter as ChapterType, ChoiceOption } from '../lib/types';
 import ChapterIllustrations from './ChapterIllustrations';
@@ -13,6 +13,19 @@ interface ChapterProps {
 
 export default function Chapter({ chapter, onChoice, selectedChoiceId }: ChapterProps) {
   const [localChoice, setLocalChoice] = useState<string | undefined>(selectedChoiceId);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  const handleAudioToggle = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (isAudioPlaying) {
+      el.pause();
+      setIsAudioPlaying(false);
+    } else {
+      el.play().then(() => setIsAudioPlaying(true)).catch(() => setIsAudioPlaying(false));
+    }
+  }, [isAudioPlaying]);
 
   function handleChoose(option: ChoiceOption) {
     setLocalChoice(option.id);
@@ -44,7 +57,20 @@ export default function Chapter({ chapter, onChoice, selectedChoiceId }: Chapter
 
       {/* Audio player */}
       <div className="mb-5">
-        <AudioPlayer audioUrl={chapter.audioUrl} chapterTitle={chapter.title} />
+        <audio
+          ref={audioRef}
+          src={chapter.audioUrl}
+          onEnded={() => setIsAudioPlaying(false)}
+          onPause={() => setIsAudioPlaying(false)}
+          style={{ display: 'none' }}
+        />
+        <AudioPlayer
+          audioUrl={chapter.audioUrl}
+          chapterTitle={chapter.title}
+          audioRef={audioRef}
+          isPlaying={isAudioPlaying}
+          onToggle={handleAudioToggle}
+        />
       </div>
 
       {/* First illustration (hero) */}

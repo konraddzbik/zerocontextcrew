@@ -5,8 +5,7 @@ export function useTypewriter(text: string, speed = 120) {
   const [currentText, setCurrentText] = useState(text);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  // Sync state with props — reset wordIndex atomically when text changes.
-  // This prevents the stale-index bug where isDone is immediately true
+  // Synchronous state reset when text changes — avoids a flash of stale text
   // because the old wordIndex exceeds the new (shorter) token array length.
   if (text !== currentText) {
     setCurrentText(text);
@@ -20,11 +19,11 @@ export function useTypewriter(text: string, speed = 120) {
 
     timerRef.current = setInterval(() => {
       setWordIndex((i) => {
-        const next = i + 1;
-        if (next >= tokens.length) {
+        if (i >= tokens.length - 1) {
           clearInterval(timerRef.current);
+          return tokens.length;
         }
-        return next;
+        return i + 1;
       });
     }, speed);
 
