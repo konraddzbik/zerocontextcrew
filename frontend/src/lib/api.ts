@@ -14,6 +14,31 @@ function generateId(): string {
 
 const BEDTIME_SUFFIX = `\n\nThis is a bedtime story meant to help a child fall asleep. Use a calm, soothing, and gentle tone throughout. Include descriptions of cozy, warm, and peaceful settings — soft blankets of starlight, warm dens, gentle breezes. The story should have a calming, sleep-inducing rhythm with shorter sentences toward the end of each chapter. End the final chapter with the characters settling down to rest under the stars.`;
 
+/**
+ * ADK artifact API returns JSON `{inlineData: {mimeType, data}}` with base64.
+ * Fetch it, decode, and return a blob URL usable in <img src>.
+ */
+async function fetchArtifactAsBlobUrl(artifactUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch(artifactUrl);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const mimeType = json?.inlineData?.mimeType || 'image/png';
+    const base64 = json?.inlineData?.data;
+    if (!base64) return null;
+    // ADK may use URL-safe base64 (- and _ instead of + and /)
+    const standardBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(standardBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: mimeType });
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error('[StoryTime] Failed to fetch artifact:', artifactUrl, err);
+    return null;
+  }
+}
+
 function buildPrompt(request: StoryRequest): string {
   const suffix = request.bedtimeMode ? BEDTIME_SUFFIX : '';
 
@@ -101,9 +126,48 @@ function generateLiveStory(
   let totalChapters: number | null = null;
   let streamingText = '';
   let lastPreviewUpdate = 0;
+  // Buffer: save_chapter functionCall text, waiting for functionResponse confirmation
+  let pendingChapterText: string | null = null;
 
   function emitChapters() {
     callbacks.onChapterReady([...confirmedChapters], { totalChapters });
+  }
+
+  /** Update a confirmed chapter with image/audio that arrives later via stateDelta/artifactDelta. */
+  function attachMedia(chapterNum: number, media: { artifactUrl?: string; audioUrl?: string }) {
+    const chapter = confirmedChapters.find((c) => c.chapterNumber === chapterNum);
+    if (!chapter) return;
+
+    // Audio — direct URL, attach immediately
+    if (media.audioUrl && !chapter.audioUrl) {
+      chapter.audioUrl = media.audioUrl;
+      emitChapters();
+    }
+
+    // Image — ADK artifact returns JSON with base64, need to fetch & decode
+    if (media.artifactUrl && chapter.illustrations.length === 0) {
+      // Mark as pending so we don't fetch twice
+      chapter.illustrations = [
+        {
+          id: `ill-${chapterNum}`,
+          imageUrl: '', // placeholder, will be replaced by blob URL
+          altText: `Illustration for Chapter ${chapterNum}`,
+          position: 'full-width',
+        },
+      ];
+      fetchArtifactAsBlobUrl(media.artifactUrl).then((blobUrl) => {
+        if (blobUrl) {
+          chapter.illustrations[0].imageUrl = blobUrl;
+          console.log(`[StoryTime] Ch${chapterNum} illustration blob ready`);
+        } else {
+          // Reset so fallback can retry
+          chapter.illustrations = [];
+          console.warn(`[StoryTime] Ch${chapterNum} artifact fetch failed`);
+        }
+        emitChapters();
+      });
+      return; // emitChapters will be called asynchronously after fetch
+    }
   }
 
   // ADK requires the session to exist before /run_sse
@@ -140,33 +204,105 @@ function generateLiveStory(
       },
       {
         onEvent: (event: ADKEvent) => {
-          // Detect structured tool calls (functionCall events from ADK)
+          // --- 1. Detect structured tool calls and responses ---
           for (const part of event.content?.parts ?? []) {
-            if (!part.functionCall) continue;
-            const { name, args } = part.functionCall;
+            // Handle functionCall: buffer chapter text, extract settings
+            if (part.functionCall) {
+              const { name, args } = part.functionCall;
 
-            if (name === 'save_prompt_settings' && args.total_chapters != null) {
-              totalChapters = args.total_chapters as number;
+              if (name === 'save_prompt_settings' && args.total_chapters != null) {
+                totalChapters = args.total_chapters as number;
+              }
+
+              if (name === 'save_chapter' && args.chapter_text) {
+                pendingChapterText = (args.chapter_text as string).trim();
+              }
             }
 
-            if (name === 'save_chapter' && args.chapter_text) {
-              const chapterNum = confirmedChapters.length + 1;
-              confirmedChapters.push({
-                id: `ch-${chapterNum}`,
-                chapterNumber: chapterNum,
-                title: `Chapter ${chapterNum}`,
-                text: (args.chapter_text as string).trim(),
-                illustrations: [],
-              });
-              // Clear preview text — confirmed chapter replaces it
-              streamingText = '';
-              emitChapters();
+            // Handle functionResponse: only confirm chapter if backend accepted it
+            const fResp = part.functionResponse as { name?: string; response?: Record<string, unknown> } | undefined;
+            if (fResp?.name === 'save_chapter' && fResp.response) {
+              const status = fResp.response.status as string;
+              if (status === 'saved' && pendingChapterText) {
+                const chapterNum = (fResp.response.chapter_number as number) || confirmedChapters.length + 1;
+                // Extract title from stateDelta if available
+                const allChapters = event.actions?.stateDelta?.all_chapters as
+                  | Array<{ chapter_number: number; scene?: string }>
+                  | undefined;
+                const backendChapter = allChapters?.find((c) => c.chapter_number === chapterNum);
+                confirmedChapters.push({
+                  id: `ch-${chapterNum}`,
+                  chapterNumber: chapterNum,
+                  title: backendChapter?.scene
+                    ? `Chapter ${chapterNum}`
+                    : `Chapter ${chapterNum}`,
+                  text: pendingChapterText,
+                  illustrations: [],
+                });
+                streamingText = '';
+                pendingChapterText = null;
+                emitChapters();
+              } else {
+                // Rejected by Guard 2 — discard pending text
+                pendingChapterText = null;
+              }
             }
           }
 
-          // Accumulate streaming text for live preview
+          // --- 2. Parse artifactDelta for illustrations (ADK artifact API) ---
+          const artifactDelta = event.actions?.artifactDelta as Record<string, number> | undefined;
+          if (artifactDelta) {
+            for (const filename of Object.keys(artifactDelta)) {
+              const match = filename.match(/chapter_(\d+)_illustration/);
+              if (match) {
+                const chapterNum = parseInt(match[1], 10);
+                const imageUrl = `${API_BASE_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}/artifacts/${filename}`;
+                console.log(`[StoryTime] Illustration artifact for ch${chapterNum}:`, imageUrl);
+                attachMedia(chapterNum, { artifactUrl: imageUrl });
+              }
+            }
+          }
+
+          // --- 3. Parse stateDelta for audio + illustrations ---
+          const stateDelta = event.actions?.stateDelta;
+          if (stateDelta) {
+            const audioResults = stateDelta.all_audio_results as
+              | Array<{ chapter: number; audio_url: string }>
+              | undefined;
+            if (audioResults) {
+              for (const entry of audioResults) {
+                if (entry.chapter && entry.audio_url) {
+                  attachMedia(entry.chapter, { audioUrl: entry.audio_url });
+                }
+              }
+            }
+
+            // Fallback: parse illustration_history from stateDelta
+            const illustrationHistory = stateDelta.illustration_history as
+              | Array<{ chapter: number; image_path?: string }>
+              | undefined;
+            if (illustrationHistory) {
+              for (const entry of illustrationHistory) {
+                if (!entry.chapter) continue;
+                // Check if this chapter already has an illustration
+                const ch = confirmedChapters.find((c) => c.chapterNumber === entry.chapter);
+                if (ch && ch.illustrations.length > 0) continue;
+                // Construct artifact URL from known naming convention
+                const filename = `chapter_${entry.chapter}_illustration.png`;
+                const imageUrl = `${API_BASE_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}/artifacts/${filename}`;
+                console.log(`[StoryTime] Illustration from stateDelta for ch${entry.chapter}:`, imageUrl);
+                attachMedia(entry.chapter, { artifactUrl: imageUrl });
+              }
+            }
+          }
+
+          // --- 4. Accumulate streaming text for live preview ---
+          // Only story_writer_agent text is actual chapter content
+          if (event.author !== 'story_writer_agent') return;
           const text = event.content?.parts?.[0]?.text;
           if (!text) return;
+          // Skip agent confirmation messages (not chapter text)
+          if (event.partial === false) return;
 
           streamingText += text;
 

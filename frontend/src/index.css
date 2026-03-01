@@ -141,3 +141,517 @@ h1, h2, h3, h4 {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Storybook Design Tokens ── */
+:root {
+  --parchment: #faf0e6;
+  --ink: #3d2b1f;
+  --chapter-title: #5c3d1e;
+  --leather: #654321;
+  --leather-dark: #3e2723;
+  --gold: #d4a547;
+  --gold-muted: #8B6914;
+  --dropcap: #8B1A1A;
+  --table: #2c1810;
+}
+
+/* ── Storybook 3D Scene ── */
+.book-scene {
+  perspective: 2000px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  position: relative;
+  padding: 2rem 1rem;
+  /* Warm background matching app aesthetic — cream with soft nature vignette */
+  background:
+    radial-gradient(ellipse at center, transparent 50%, rgba(26,58,42,0.06) 100%),
+    radial-gradient(ellipse at bottom, rgba(107,66,38,0.06) 0%, transparent 60%),
+    var(--cream);
+}
+
+/* Stage — grid overlay so cover + spread can overlap during opening */
+.book-stage {
+  display: grid;
+  place-items: center;
+}
+.book-stage-layer {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+/* Soft shadow under book */
+.book-shadow {
+  position: absolute;
+  bottom: calc(50% - min(35vh, 325px) - 30px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(75vw, 850px);
+  height: 40px;
+  background: radial-gradient(ellipse, rgba(26,58,42,0.12) 0%, transparent 70%);
+  filter: blur(12px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.book-spread {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(90vw, 1000px);
+  height: min(70vh, 650px);
+  background-color: var(--parchment);
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(139,109,76,0.03) 30px, rgba(139,109,76,0.03) 31px),
+    repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(139,109,76,0.02) 30px, rgba(139,109,76,0.02) 31px);
+  border-radius: 4px 12px 12px 4px;
+  box-shadow: 0 10px 40px var(--soft-shadow), 0 2px 8px rgba(0,0,0,0.08), inset 0 0 80px rgba(139,109,76,0.1);
+  position: relative;
+  transform-style: preserve-3d;
+  transform: perspective(2000px) rotateY(-2deg) rotateX(1deg);
+  z-index: 1;
+}
+
+/* Page edges — right side (stack of pages visible from the side) */
+.book-spread::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: -14px;
+  width: 14px;
+  height: calc(100% - 8px);
+  background: repeating-linear-gradient(
+    to bottom,
+    #f5e6d3 0px,
+    #ede0cc 1px,
+    #f5e6d3 2px
+  );
+  border-radius: 0 3px 3px 0;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.2);
+  z-index: -1;
+}
+
+/* Book spine — 3D V-shape shadow */
+.book-spread::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 28px;
+  height: calc(100% + 4px);
+  transform: translateX(-50%);
+  z-index: 15;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,0.06) 15%,
+    rgba(0,0,0,0.2) 35%,
+    rgba(0,0,0,0.35) 50%,
+    rgba(0,0,0,0.2) 65%,
+    rgba(0,0,0,0.06) 85%,
+    rgba(0,0,0,0) 100%
+  );
+}
+
+/* Page edges — bottom (stack of pages) */
+.book-spread-bottom-edge {
+  position: absolute;
+  bottom: -10px;
+  left: 8px;
+  right: 8px;
+  height: 10px;
+  background: repeating-linear-gradient(
+    to right,
+    #f2dfc8 0px,
+    #e8d4bb 1px,
+    #f2dfc8 2px
+  );
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  z-index: -1;
+}
+
+/* Page edges — top */
+.book-spread-top-edge {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  right: 10px;
+  height: 8px;
+  background: repeating-linear-gradient(
+    to right,
+    #f5e6d3 0px,
+    #ede0cc 1px,
+    #f5e6d3 2px
+  );
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+  z-index: -1;
+}
+
+/* ── Ornate page styling — illuminated manuscript ── */
+.page-left,
+.page-right {
+  position: relative;
+  /* Aged parchment stains */
+  background-image:
+    radial-gradient(ellipse at 80% 12%, rgba(139,109,76,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 85%, rgba(139,109,76,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(139,109,76,0.02) 0%, transparent 70%);
+}
+
+/* Page curvature (inset shadows at spine) */
+.page-left {
+  box-shadow: inset -20px 0 30px -15px rgba(0,0,0,0.08);
+  overflow: hidden; /* text is paginated, not scrolled */
+}
+.page-right {
+  box-shadow: inset 20px 0 30px -15px rgba(0,0,0,0.08);
+}
+
+/* Outer ornate border */
+.page-left::before,
+.page-right::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  border: 2px solid rgba(139,105,20,0.22);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Inner ornate border — double frame effect */
+.page-left::after,
+.page-right::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  border: 1px solid rgba(139,105,20,0.13);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Corner ornament (positioned by PageOrnaments FrameCorners) */
+.page-corner {
+  position: absolute;
+  z-index: 6;
+  color: var(--gold-muted);
+  opacity: 0.5;
+  font-size: 1.3rem;
+  line-height: 1;
+  pointer-events: none;
+}
+.page-corner-tl { top: 1px; left: 2px; }
+.page-corner-tr { top: 1px; right: 2px; transform: scaleX(-1); }
+.page-corner-bl { bottom: 1px; left: 2px; transform: scaleY(-1); }
+.page-corner-br { bottom: 1px; right: 2px; transform: scale(-1); }
+
+/* ── Book Cover 3D ── */
+.book-cover {
+  position: relative;
+  transform: perspective(2000px) rotateY(-3deg) rotateX(1deg);
+  z-index: 1;
+}
+/* Cover thickness — right edge */
+.book-cover::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: -8px;
+  width: 8px;
+  height: calc(100% - 6px);
+  background: linear-gradient(to right, #5a3a1e, #4a2e16);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 3px 0 8px rgba(0,0,0,0.3);
+}
+/* Cover thickness — bottom edge */
+.book-cover::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 5px;
+  right: 5px;
+  height: 6px;
+  background: linear-gradient(to bottom, #5a3a1e, #4a2e16);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* Cover inner — leather texture via CSS */
+.book-cover-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255,255,255,0.02) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(0,0,0,0.05) 0%, transparent 70%);
+}
+
+/* Embossed frames on cover */
+.cover-emboss {
+  position: absolute;
+  inset: 20px;
+  border: 2px solid rgba(139,105,20,0.2);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.cover-emboss-inner {
+  position: absolute;
+  inset: 32px;
+  border: 1px solid rgba(139,105,20,0.12);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Heraldic emblem grid */
+.cover-emblems {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 60px;
+}
+.cover-emblem {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  border: 1.5px solid rgba(139,105,20,0.25);
+  border-radius: 4px;
+  background: rgba(139,105,20,0.06);
+  box-shadow:
+    inset 1px 1px 2px rgba(255,255,255,0.08),
+    inset -1px -1px 2px rgba(0,0,0,0.15);
+}
+
+/* ── Illustration — ornate gold frame, painted on page ── */
+.illustration-on-page {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+  mix-blend-mode: multiply;
+  opacity: 0.95;
+  filter: saturate(0.9) contrast(0.95);
+  border: 3px solid rgba(139,105,20,0.25);
+  box-shadow:
+    inset 0 0 0 2px rgba(139,105,20,0.08),
+    0 2px 12px rgba(0,0,0,0.1);
+  padding: 3px;
+  background: rgba(139,105,20,0.04);
+}
+
+/* ── Decorative page bottom border ── */
+.page-bottom-border {
+  position: absolute;
+  bottom: 28px;
+  left: 24px;
+  right: 24px;
+  height: 32px;
+  border-top: 1.5px solid rgba(139,109,76,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 6px;
+}
+.page-bottom-border .border-symbol {
+  font-size: 0.7rem;
+  color: var(--gold-muted);
+  opacity: 0.35;
+}
+
+/* ── Storybook Typography ── */
+.chapter-title-book {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.5rem;
+  color: var(--chapter-title);
+  text-align: center;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+}
+
+.story-text-book {
+  font-family: 'Crimson Text', serif;
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: var(--ink);
+  text-align: justify;
+}
+
+/* Decorative initial — inline on continuation pages, stays on same line */
+.dropcap {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 2rem;
+  line-height: 1;
+  margin-right: 2px;
+  color: var(--dropcap);
+  text-shadow: 1px 1px 2px rgba(139,105,20,0.15);
+}
+
+/* Illuminated initial — gold-backed floated dropcap on chapter first page */
+.dropcap-first {
+  font-size: 3.8rem;
+  float: left;
+  line-height: 0.75;
+  margin: 4px 10px 4px 0;
+  padding: 6px 8px 8px 6px;
+  background:
+    linear-gradient(135deg, rgba(212,165,71,0.12) 0%, rgba(139,105,20,0.06) 50%, transparent 80%);
+  border: 1.5px solid rgba(139,105,20,0.18);
+}
+
+/* ── Book Page Scrollbar ── */
+.book-page-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-muted) transparent;
+}
+.book-page-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.book-page-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.book-page-scroll::-webkit-scrollbar-thumb {
+  background: var(--gold-muted);
+  border-radius: 3px;
+}
+
+/* ── Storybook Animations ── */
+@keyframes page-flip {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-180deg); }
+}
+.page-flipping {
+  animation: page-flip 1.2s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+
+@keyframes cover-open {
+  from { transform: perspective(1800px) rotateY(0deg); }
+  to   { transform: perspective(1800px) rotateY(-180deg); }
+}
+.cover-opening {
+  animation: cover-open 1.8s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+
+@keyframes illustration-reveal {
+  from { opacity: 0; filter: blur(8px); transform: scale(0.95); }
+  to   { opacity: 1; filter: blur(0);   transform: scale(1); }
+}
+.illustration-enter {
+  animation: illustration-reveal 0.8s ease-out forwards;
+}
+
+@keyframes quill-write {
+  0%   { transform: rotate(-5deg) translateY(0); }
+  25%  { transform: rotate(5deg) translateY(-3px); }
+  50%  { transform: rotate(-3deg) translateY(0); }
+  75%  { transform: rotate(4deg) translateY(-2px); }
+  100% { transform: rotate(-5deg) translateY(0); }
+}
+.quill-spinner {
+  animation: quill-write 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background: var(--ink);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink-cursor 0.8s step-end infinite;
+}
+
+/* ── Storybook Responsive ── */
+@media (max-width: 768px) {
+  .book-spread {
+    grid-template-columns: 1fr;
+    width: 95vw;
+    height: auto;
+    min-height: 80vh;
+    border-radius: 8px;
+    transform: none;
+  }
+  .book-spread::before,
+  .book-spread::after {
+    display: none;
+  }
+  .book-spread-bottom-edge,
+  .book-spread-top-edge {
+    display: none;
+  }
+  .book-cover {
+    transform: none;
+  }
+  .book-cover::before,
+  .book-cover::after {
+    display: none;
+  }
+  .book-shadow {
+    display: none;
+  }
+  .book-nav {
+    bottom: 1rem;
+  }
+}
+
+/* Navigation bar below the book */
+.book-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.2rem;
+}
+.book-nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--gold);
+  background: rgba(139,105,20,0.1);
+  border: 1.5px solid var(--gold-muted);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.book-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.book-nav-info {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ink);
+  opacity: 0.5;
+  min-width: 100px;
+  text-align: center;
+}

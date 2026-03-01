@@ -19,6 +19,7 @@ export interface ADKEvent {
   partial: boolean;
   actions: {
     stateDelta?: Record<string, unknown>;
+    artifactDelta?: Record<string, number>;
     transferToAgent?: string;
     escalate?: boolean;
   };
