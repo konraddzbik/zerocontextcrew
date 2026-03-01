@@ -38,6 +38,7 @@ async function fetchArtifactAsBlobUrl(artifactUrl: string): Promise<string | nul
 }
 
 function buildPrompt(request: StoryRequest): string {
+  if (request.customPrompt) return request.customPrompt;
   return [
     `Write a children's story in English with 3 chapters.`,
     `The hero is ${request.characterName}, a ${request.characterType}.`,
@@ -322,7 +323,7 @@ function generateLiveStory(
         onDone: () => {
           const story: Story = {
             storyId: sessionId,
-            title: `${request.characterName}'s Adventure`,
+            title: request.customPrompt ? 'Your Adventure' : `${request.characterName}'s Adventure`,
             chapters: confirmedChapters,
             summary: {
               lessonsLearned: ['Taking care of nature helps everyone.'],

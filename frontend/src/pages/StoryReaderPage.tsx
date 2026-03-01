@@ -20,6 +20,7 @@ export default function StoryReaderPage() {
     characterType?: string;
     companion?: string;
     world?: string;
+    customPrompt?: string;
   } | null;
 
   const world = (pickerState?.world || 'forest') as 'forest' | 'ocean' | 'mountains' | 'arctic';
@@ -38,6 +39,7 @@ export default function StoryReaderPage() {
       animalCompanion: pickerState?.companion || 'fox',
       world: world,
       ageRange: '4-6',
+      ...(pickerState?.customPrompt ? { customPrompt: pickerState.customPrompt } : {}),
     };
 
     const handle = generateStory(request, {

@@ -4,6 +4,7 @@ export interface StoryRequest {
   animalCompanion: string;
   world: 'forest' | 'ocean' | 'mountains' | 'arctic';
   ageRange: '4-6' | '6-8';
+  customPrompt?: string;
 }
 
 export interface Story {
