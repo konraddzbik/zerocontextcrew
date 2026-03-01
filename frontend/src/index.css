@@ -6,12 +6,12 @@
   --leaf: #4a7c59;
   --sun: #f5c542;
   --sky: #e8f0e8;
-  --cream: #faf8f2;
+  --cream: #faf3ea;
   --coral: #e07a5f;
   --water: #5b9bd5;
   --berry: #9b5de5;
   --bark: #6b4226;
-  --surface: #ffffff;
+  --surface: #fdf8f0;
   --soft-shadow: rgba(26, 58, 42, 0.08);
 
   --font-display: 'Fraunces', serif;
@@ -343,30 +343,6 @@ h1, h2, h3, h4 {
   transform: perspective(2000px) rotateY(-3deg) rotateX(1deg);
   z-index: 1;
 }
-/* Cover thickness — right edge */
-.book-cover::before {
-  content: '';
-  position: absolute;
-  top: 3px;
-  right: -8px;
-  width: 8px;
-  height: calc(100% - 6px);
-  background: linear-gradient(to right, var(--cover-edge-light), var(--cover-edge-dark));
-  border-radius: 0 4px 4px 0;
-  box-shadow: 3px 0 8px rgba(0,0,0,0.3);
-}
-/* Cover thickness — bottom edge */
-.book-cover::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 5px;
-  right: 5px;
-  height: 6px;
-  background: linear-gradient(to bottom, var(--cover-edge-light), var(--cover-edge-dark));
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-}
 
 /* Cover inner — leather texture via CSS */
 .book-cover-inner {
@@ -398,6 +374,27 @@ h1, h2, h3, h4 {
   border: 1px solid rgba(139,105,20,0.12);
   border-radius: 2px;
   pointer-events: none;
+}
+
+/* Publisher imprint on cover bottom */
+.cover-publisher-imprint {
+  position: absolute;
+  bottom: 22px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.cover-publisher-name {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--gold-muted);
+  opacity: 0.45;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 /* Heraldic emblem grid */
@@ -755,10 +752,6 @@ h1, h2, h3, h4 {
   .book-cover {
     transform: none;
   }
-  .book-cover::before,
-  .book-cover::after {
-    display: none;
-  }
   .book-shadow {
     display: none;
   }
@@ -774,7 +767,45 @@ h1, h2, h3, h4 {
   justify-content: center;
   gap: 1.5rem;
   margin-top: 1.2rem;
+  position: relative;
+  width: min(90vw, 1000px);
 }
+
+/* "New Tale" link — left-aligned, storybook-styled */
+.book-nav-new-story {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--gold-muted);
+  opacity: 0.55;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: opacity 0.25s ease;
+  letter-spacing: 0.02em;
+}
+.book-nav-new-story:hover {
+  opacity: 0.85;
+}
+.book-nav-new-story-icon {
+  font-style: normal;
+  font-size: 0.65rem;
+}
+
+/* Page navigation controls — centered group */
+.book-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .book-nav-btn {
   width: 40px;
   height: 40px;

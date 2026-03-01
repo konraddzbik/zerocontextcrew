@@ -20,7 +20,7 @@ interface BookProps {
   totalChapters: number | null;
   choices: Record<string, ChoiceOption>;
   onChoice: (chapterId: string, option: ChoiceOption) => void;
-  onFinish: () => void;
+
   onNewStory: () => void;
 }
 
@@ -151,6 +151,11 @@ export default function Book({
   // Go to previous page (instant, no flip animation)
   const handlePrevPage = useCallback(() => {
     if (isFlipping) return;
+    // Return from "The End" to the last page of the story
+    if (bookState === 'ended') {
+      setBookState('reading');
+      return;
+    }
     if (textPageIndex > 0) {
       setTextPageIndex((i) => i - 1);
       setBookPageNumber((p) => Math.max(1, p - 1));
@@ -159,9 +164,9 @@ export default function Book({
       setBookPageNumber((p) => Math.max(1, p - 1));
       // textPageIndex resets to 0 via useEffect on chapter change
     }
-  }, [isFlipping, textPageIndex, currentChapterIndex]);
+  }, [isFlipping, textPageIndex, currentChapterIndex, bookState]);
 
-  const canGoPrev = textPageIndex > 0 || currentChapterIndex > 0;
+  const canGoPrev = bookState === 'ended' || textPageIndex > 0 || currentChapterIndex > 0;
 
   // Called by PageLeft when typewriter finishes on a non-last text page
   const handleAutoTurn = useCallback(() => {
@@ -251,12 +256,12 @@ export default function Book({
         {/* OPENING: static parchment spread behind + cover flips on top */}
         {bookState === 'opening' && (
           <>
-            {/* Static parchment — no interactive content, avoids state issues */}
+            {/* Static parchment — clip-revealed in sync with cover flip */}
             <motion.div
               className="book-stage-layer"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.8, ease: 'easeOut' }}
+              initial={{ opacity: 0, clipPath: 'inset(0 100% 0 0)' }}
+              animate={{ opacity: 1, clipPath: 'inset(0 0% 0 0)' }}
+              transition={{ delay: 0.4, duration: 1.4, ease: [0.645, 0.045, 0.355, 1] }}
             >
               <div className="book-spread">
                 <div className="book-spread-top-edge" />
@@ -339,49 +344,66 @@ export default function Book({
         )}
       </div>
 
-      {/* Navigation bar — below the book */}
-      {bookState === 'reading' && (
-        <div className="book-nav">
-          <motion.button
-            onClick={handlePrevPage}
-            disabled={!canGoPrev || isFlipping}
-            className="book-nav-btn"
-            whileHover={canGoPrev ? { scale: 1.1 } : {}}
-            whileTap={canGoPrev ? { scale: 0.9 } : {}}
-          >
-            &larr;
-          </motion.button>
+      {/* Navigation + progress — always rendered to reserve layout space */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: bookState === 'reading' || bookState === 'ended' ? 1 : 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        style={{ pointerEvents: bookState === 'reading' || bookState === 'ended' ? 'auto' : 'none' }}
+      >
+          <div className="book-nav">
+            <motion.button
+              onClick={onNewStory}
+              className="book-nav-new-story"
+              whileHover={{ scale: 1.05, opacity: 0.9 }}
+              whileTap={{ scale: 0.95 }}
+              title="Start a new story"
+            >
+              <span className="book-nav-new-story-icon" aria-hidden="true">&#x2726;</span>
+              New Tale
+            </motion.button>
 
-          <div className="book-nav-info-enhanced">
-            <div className="book-nav-chapter">
-              Chapter {chapter?.chapterNumber ?? currentChapterIndex + 1}
-              {totalChapters && <span className="book-nav-of"> of {totalChapters}</span>}
+            <div className="book-nav-controls">
+              <motion.button
+                onClick={handlePrevPage}
+                disabled={!canGoPrev || isFlipping}
+                className="book-nav-btn"
+                whileHover={canGoPrev ? { scale: 1.1 } : {}}
+                whileTap={canGoPrev ? { scale: 0.9 } : {}}
+              >
+                &larr;
+              </motion.button>
+
+              <div className="book-nav-info-enhanced">
+                <div className="book-nav-chapter">
+                  Chapter {chapter?.chapterNumber ?? currentChapterIndex + 1}
+                  {totalChapters && <span className="book-nav-of"> of {totalChapters}</span>}
+                </div>
+              </div>
+
+              <motion.button
+                onClick={() => triggerFlip()}
+                disabled={isFlipping || bookState === 'ended'}
+                className="book-nav-btn"
+                whileHover={!isFlipping && bookState !== 'ended' ? { scale: 1.1 } : {}}
+                whileTap={!isFlipping && bookState !== 'ended' ? { scale: 0.9 } : {}}
+              >
+                &rarr;
+              </motion.button>
             </div>
           </div>
 
-          <motion.button
-            onClick={() => triggerFlip()}
-            disabled={isFlipping}
-            className="book-nav-btn"
-            whileHover={!isFlipping ? { scale: 1.1 } : {}}
-            whileTap={!isFlipping ? { scale: 0.9 } : {}}
-          >
-            &rarr;
-          </motion.button>
-        </div>
-      )}
-
-      {/* Chapter progress bar */}
-      {bookState === 'reading' && totalChapters && totalChapters > 1 && (
-        <div className="book-progress-bar">
-          <motion.div
-            className="book-progress-fill"
-            initial={false}
-            animate={{ width: `${((chapter?.chapterNumber ?? 1) / totalChapters) * 100}%` }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-          />
-        </div>
-      )}
+          {totalChapters && totalChapters > 1 && (
+            <div className="book-progress-bar">
+              <motion.div
+                className="book-progress-fill"
+                initial={false}
+                animate={{ width: `${((chapter?.chapterNumber ?? 1) / totalChapters) * 100}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              />
+            </div>
+          )}
+        </motion.div>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export default function CharacterPicker({
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
           maxLength={20}
-          className="w-full px-4 py-3 rounded-xl border-2 border-leaf/20 bg-cream font-body text-lg text-forest placeholder-bark/30 focus:outline-none focus:border-sun transition-colors"
+          className="w-full px-4 py-3 rounded-lg border-2 border-[var(--ornate-border)] bg-cream font-body text-lg text-[var(--ink)] placeholder-[var(--ink)]/30 focus:outline-none focus:border-[var(--gold)] transition-colors"
         />
       </div>
 
@@ -51,10 +51,10 @@ export default function CharacterPicker({
               whileTap={{ scale: 0.96 }}
               animate={selectedType === ct.id ? { scale: [1, 1.04, 1] } : {}}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+              className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
                 selectedType === ct.id
-                  ? 'border-leaf bg-sky shadow-md'
-                  : 'border-leaf/20 bg-surface hover:border-leaf/40'
+                  ? 'border-[var(--gold)] bg-[var(--gold)]/10 shadow-md'
+                  : 'border-[var(--ornate-border)] bg-surface hover:border-[var(--gold-muted)]'
               }`}
             >
               <span className="text-3xl">{ct.emoji}</span>

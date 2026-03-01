@@ -70,10 +70,13 @@ export default function StoryPickerPage() {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="font-display text-4xl font-bold text-forest mb-2">
+            <h1
+              className="text-4xl font-bold mb-2"
+              style={{ fontFamily: "'Cinzel Decorative', serif", color: 'var(--chapter-title)' }}
+            >
               {isBedtime ? 'Create Your Bedtime Story \u{1F319}' : 'Create Your Story \u2728'}
             </h1>
-            <p className="font-body text-lg text-leaf">
+            <p className="font-body text-lg text-[var(--ink)]/60">
               {isBedtime
                 ? 'A cozy story to drift off to sleep...'
                 : "Choose your path and we'll write a story just for you!"}
@@ -93,10 +96,10 @@ export default function StoryPickerPage() {
                 onClick={() => setMode(m.id)}
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.97 }}
-                className={`text-left p-5 rounded-2xl border-2 cursor-pointer transition-colors ${
+                className={`text-left p-5 rounded-lg border-2 cursor-pointer transition-colors ${
                   mode === m.id
-                    ? 'border-sun bg-sun/10 shadow-md'
-                    : 'border-leaf/20 bg-surface hover:border-leaf/40'
+                    ? 'border-[var(--gold)] bg-[var(--gold)]/10 shadow-md'
+                    : 'border-[var(--ornate-border)] bg-surface hover:border-[var(--gold-muted)]'
                 }`}
               >
                 <span className="text-3xl block mb-2">{m.emoji}</span>
@@ -122,8 +125,8 @@ export default function StoryPickerPage() {
               >
                 <StaggerList className="space-y-8">
                   <StaggerItem>
-                    <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Hero</p>
-                    <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                    <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ fontFamily: "'Cinzel Decorative', serif", color: 'var(--gold-muted)' }}>Your Hero</p>
+                    <div className="bg-surface rounded-lg p-6 shadow-[0_4px_20px_var(--soft-shadow)] border border-[var(--ornate-border)]">
                       <CharacterPicker
                         name={name}
                         onNameChange={setName}
@@ -134,8 +137,8 @@ export default function StoryPickerPage() {
                   </StaggerItem>
 
                   <StaggerItem>
-                    <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Companion</p>
-                    <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                    <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ fontFamily: "'Cinzel Decorative', serif", color: 'var(--gold-muted)' }}>Your Companion</p>
+                    <div className="bg-surface rounded-lg p-6 shadow-[0_4px_20px_var(--soft-shadow)] border border-[var(--ornate-border)]">
                       <CompanionPicker
                         companion={companion}
                         onCompanionChange={setCompanion}
@@ -144,8 +147,8 @@ export default function StoryPickerPage() {
                   </StaggerItem>
 
                   <StaggerItem>
-                    <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your World</p>
-                    <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                    <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ fontFamily: "'Cinzel Decorative', serif", color: 'var(--gold-muted)' }}>Your World</p>
+                    <div className="bg-surface rounded-lg p-6 shadow-[0_4px_20px_var(--soft-shadow)] border border-[var(--ornate-border)]">
                       <WorldPicker selected={world} onSelect={setWorld} />
                     </div>
                   </StaggerItem>
@@ -154,7 +157,7 @@ export default function StoryPickerPage() {
                 {/* Preview of selections */}
                 {guidedReady && (
                   <motion.div
-                    className="mt-8 bg-surface rounded-2xl px-6 py-4 shadow-[0_4px_20px_var(--soft-shadow)] text-center"
+                    className="mt-8 bg-surface rounded-lg px-6 py-4 shadow-[0_4px_20px_var(--soft-shadow)] border border-[var(--ornate-border)] text-center"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
@@ -173,8 +176,8 @@ export default function StoryPickerPage() {
                 exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.25 }}
               >
-                <p className="font-display text-sm font-bold text-leaf uppercase tracking-wide mb-2">Your Story</p>
-                <div className="bg-surface rounded-2xl p-6 shadow-[0_4px_20px_var(--soft-shadow)]">
+                <p className="text-sm font-bold uppercase tracking-wide mb-2" style={{ fontFamily: "'Cinzel Decorative', serif", color: 'var(--gold-muted)' }}>Your Story</p>
+                <div className="bg-surface rounded-lg p-6 shadow-[0_4px_20px_var(--soft-shadow)] border border-[var(--ornate-border)]">
                   <FreeformPicker
                     prompt={prompt}
                     onPromptChange={setPrompt}
@@ -196,13 +199,17 @@ export default function StoryPickerPage() {
             <motion.button
               onClick={handleCreate}
               disabled={!isReady}
-              whileHover={isReady ? { scale: 1.04, y: -2 } : {}}
-              whileTap={isReady ? { scale: 0.97 } : {}}
-              className={`px-10 py-4 rounded-2xl font-display font-bold text-xl transition-colors ${
+              whileHover={isReady ? { scale: 1.05 } : {}}
+              whileTap={isReady ? { scale: 0.95 } : {}}
+              className={`px-10 py-4 rounded-lg font-bold text-xl transition-colors ${
                 isReady
-                  ? 'bg-sun text-forest shadow-lg cursor-pointer'
-                  : 'bg-sky text-bark/40 cursor-not-allowed'
+                  ? 'the-end-btn cursor-pointer'
+                  : 'text-[var(--ink)]/30 cursor-not-allowed'
               }`}
+              style={{
+                fontFamily: "'Cinzel Decorative', serif",
+                ...(!isReady ? { border: '1.5px solid var(--ornate-border)', background: 'transparent' } : {}),
+              }}
             >
               {isReady ? 'Create My Story! 📖' : 'Pick everything first!'}
             </motion.button>

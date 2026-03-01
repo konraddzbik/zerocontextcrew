@@ -44,7 +44,7 @@ export default function FreeformPicker({
           value={prompt}
           onChange={(e) => onPromptChange(e.target.value)}
           rows={5}
-          className="w-full px-5 py-4 rounded-2xl border-2 border-leaf/20 bg-cream font-body text-lg text-forest placeholder-bark/30 focus:outline-none focus:border-sun transition-colors resize-none"
+          className="w-full px-5 py-4 rounded-lg border-2 border-[var(--ornate-border)] bg-cream font-body text-lg text-[var(--ink)] placeholder-[var(--ink)]/30 focus:outline-none focus:border-[var(--gold)] transition-colors resize-none"
         />
         <p className="text-right text-xs font-body text-bark/30 mt-1">
           {prompt.length < 10
@@ -64,10 +64,10 @@ export default function FreeformPicker({
               onClick={() => toggleMood(m.id)}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.94 }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-2 cursor-pointer transition-colors font-body text-sm font-medium ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 cursor-pointer transition-colors font-body text-sm font-medium ${
                 moods.includes(m.id)
-                  ? 'border-leaf bg-sky text-forest shadow-sm'
-                  : 'border-leaf/20 bg-surface text-forest/70 hover:border-leaf/40'
+                  ? 'border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--ink)] shadow-sm'
+                  : 'border-[var(--ornate-border)] bg-surface text-[var(--ink)]/70 hover:border-[var(--gold-muted)]'
               }`}
             >
               <span>{m.emoji}</span>

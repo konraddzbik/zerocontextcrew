@@ -30,9 +30,10 @@ export default function LoginPage() {
           initial="hidden"
           animate="visible"
           variants={scaleIn}
-          className={`bg-surface rounded-2xl px-10 py-14 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)] ${
+          className={`bg-surface rounded-lg px-10 py-14 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)] ${
             shaking ? 'animate-shake' : ''
           }`}
+          style={{ border: '1px solid var(--ornate-border)' }}
         >
           {/* Decorative emoji */}
           <motion.div
@@ -43,10 +44,13 @@ export default function LoginPage() {
             📖✨
           </motion.div>
 
-          <h1 className="font-display text-4xl font-bold text-forest mb-3">
+          <h1
+            className="text-4xl font-bold mb-3"
+            style={{ fontFamily: "'Cinzel Decorative', serif", color: 'var(--chapter-title)' }}
+          >
             TaleWorld
           </h1>
-          <p className="text-leaf mb-10 font-body text-lg">
+          <p className="text-[var(--ink)]/60 mb-10 font-body text-lg">
             Enter the magic word to begin your adventure!
           </p>
 
@@ -60,7 +64,7 @@ export default function LoginPage() {
                   setUsername(e.target.value);
                   setError('');
                 }}
-                className="w-full px-6 py-5 rounded-2xl bg-cream border-2 border-leaf/20 text-forest placeholder-bark/30 font-body text-lg focus:outline-none focus:border-sun transition-colors"
+                className="w-full px-6 py-5 rounded-lg bg-cream border-2 border-[var(--ornate-border)] text-[var(--ink)] placeholder-[var(--ink)]/30 font-body text-lg focus:outline-none focus:border-[var(--gold)] transition-colors"
               />
             </div>
             <div>
@@ -72,7 +76,7 @@ export default function LoginPage() {
                   setPassword(e.target.value);
                   setError('');
                 }}
-                className="w-full px-6 py-5 rounded-2xl bg-cream border-2 border-leaf/20 text-forest placeholder-bark/30 font-body text-lg focus:outline-none focus:border-sun transition-colors"
+                className="w-full px-6 py-5 rounded-lg bg-cream border-2 border-[var(--ornate-border)] text-[var(--ink)] placeholder-[var(--ink)]/30 font-body text-lg focus:outline-none focus:border-[var(--gold)] transition-colors"
               />
             </div>
 
@@ -88,9 +92,10 @@ export default function LoginPage() {
 
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.03, y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              className="w-full py-5 rounded-2xl bg-sun text-forest font-display font-bold text-lg shadow-lg hover:brightness-110 transition-all cursor-pointer mt-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-full py-5 rounded-lg the-end-btn font-bold text-lg cursor-pointer mt-2"
+              style={{ fontFamily: "'Cinzel Decorative', serif" }}
             >
               Open the Book! 📖
             </motion.button>
