@@ -52,6 +52,8 @@ Login  -->  Pick Your Adventure  -->  3D Storybook  -->  Summary
 
 ### Docker (recommended)
 
+Requires Docker and Docker Compose v2.
+
 ```bash
 # 1. Configure API keys
 cp storytelling/.env.example storytelling/.env
@@ -63,6 +65,20 @@ cp storytelling/.env.example storytelling/.env
 # Frontend → http://localhost:4173
 # Backend  → http://localhost:8000
 ```
+
+The `start.sh` helper supports additional commands:
+
+```bash
+./start.sh --build   # force-rebuild images (needed after changing VITE_* env vars)
+./start.sh down      # stop and remove containers
+./start.sh logs      # follow logs from all services
+```
+
+The stack consists of two services defined in `docker-compose.yml`:
+- **backend** — FastAPI + ADK agents, serves API on port 8000 (includes `/audio` static mount for narration files)
+- **frontend** — Vite production build served on port 4173
+
+Audio files are persisted in a Docker volume (`audio_files`) between restarts. The backend includes a health check — the frontend container waits for it before starting.
 
 ### Local Development
 
