@@ -13,6 +13,11 @@
     <title>TaleWorld</title>
   </head>
   <body>
+    <script>
+      if (localStorage.getItem('bedtimeMode') === 'true') {
+        document.documentElement.setAttribute('data-theme', 'bedtime');
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

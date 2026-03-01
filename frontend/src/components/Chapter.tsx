@@ -21,7 +21,7 @@ export default function Chapter({ chapter, onChoice, selectedChoiceId }: Chapter
 
   return (
     <article
-      className="bg-white rounded-2xl p-5 sm:p-8 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-leaf"
+      className="bg-surface rounded-2xl p-5 sm:p-8 shadow-[0_4px_20px_var(--soft-shadow)] border-l-4 border-leaf"
       aria-label={`Chapter ${chapter.chapterNumber}: ${chapter.title}`}
     >
       {/* Chapter heading */}

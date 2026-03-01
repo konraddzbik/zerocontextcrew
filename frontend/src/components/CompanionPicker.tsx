@@ -35,7 +35,7 @@ export default function CompanionPicker({
             className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-colors ${
               companion === c.id
                 ? 'border-leaf bg-sky shadow-md'
-                : 'border-leaf/20 bg-white hover:border-leaf/40'
+                : 'border-leaf/20 bg-surface hover:border-leaf/40'
             }`}
           >
             <span className="text-2xl">{c.emoji}</span>

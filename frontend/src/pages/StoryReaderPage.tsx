@@ -6,6 +6,7 @@ import { generateStory } from '../lib/api';
 import Chapter from '../components/Chapter';
 import WorldScene from '../components/WorldScene';
 import LoadingScene from '../components/LoadingScene';
+import { useBedtime } from '../components/BedtimeContext';
 import { PageTransition } from '../components/motion';
 
 const chapterVariants = {
@@ -27,9 +28,11 @@ export default function StoryReaderPage() {
     companion?: string;
     world?: string;
     customPrompt?: string;
+    bedtimeMode?: boolean;
   } | null;
 
   const world = (pickerState?.world || 'forest') as 'forest' | 'ocean' | 'mountains' | 'arctic';
+  const { isBedtime } = useBedtime();
 
   const [status, setStatus] = useState<Status>('loading');
   const [story, setStory] = useState<Story | null>(null);
@@ -47,6 +50,7 @@ export default function StoryReaderPage() {
       world: world,
       ageRange: '4-6',
       ...(pickerState?.customPrompt ? { customPrompt: pickerState.customPrompt } : {}),
+      ...(pickerState?.bedtimeMode ? { bedtimeMode: true } : {}),
     };
 
     const handle = generateStory(request, {
@@ -113,7 +117,7 @@ export default function StoryReaderPage() {
     return (
       <PageTransition>
         <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)]">
+          <div className="bg-surface rounded-2xl p-8 max-w-md w-full text-center shadow-[0_4px_20px_var(--soft-shadow)]">
             <div className="text-5xl mb-4">😔</div>
             <h2 className="font-display text-2xl font-bold text-forest mb-2">
               Oops! Story got lost
@@ -132,7 +136,7 @@ export default function StoryReaderPage() {
                 onClick={() => navigate('/pick')}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="px-6 py-3 rounded-xl bg-white text-forest border-2 border-leaf/20 font-display font-bold cursor-pointer"
+                className="px-6 py-3 rounded-xl bg-surface text-forest border-2 border-leaf/20 font-display font-bold cursor-pointer"
               >
                 Pick a Different Story
               </motion.button>
@@ -166,10 +170,10 @@ export default function StoryReaderPage() {
                     width: i === currentChapter ? 32 : 16,
                     backgroundColor:
                       i === currentChapter
-                        ? '#f5c542'
+                        ? (isBedtime ? '#d4a54a' : '#f5c542')
                         : i < chapters.length
-                          ? 'rgba(74,124,89,0.6)'
-                          : 'rgba(74,124,89,0.2)',
+                          ? (isBedtime ? 'rgba(123,155,181,0.6)' : 'rgba(74,124,89,0.6)')
+                          : (isBedtime ? 'rgba(123,155,181,0.2)' : 'rgba(74,124,89,0.2)'),
                   }}
                   className="h-2 rounded-full"
                   transition={{ type: 'spring', stiffness: 300, damping: 25 }}
@@ -189,7 +193,7 @@ export default function StoryReaderPage() {
           <div className="flex items-center justify-center py-4">
             <div className="flex items-center gap-3 text-leaf/40">
               <div className="h-px w-12 bg-leaf/20" />
-              <span className="text-xl">✨</span>
+              <span className="text-xl">{isBedtime ? '\u{1F319}' : '\u2728'}</span>
               <div className="h-px w-12 bg-leaf/20" />
             </div>
           </div>
@@ -218,7 +222,7 @@ export default function StoryReaderPage() {
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              ✨ Next chapter is being written...
+              {isBedtime ? '\u{1F319}' : '\u2728'} Next chapter is being written...
             </motion.div>
           )}
 
@@ -232,7 +236,7 @@ export default function StoryReaderPage() {
               className={`px-6 py-3 rounded-xl font-display font-bold transition-colors ${
                 isFirst
                   ? 'text-bark/30 cursor-not-allowed'
-                  : 'bg-white text-forest border-2 border-leaf/20 hover:border-leaf/40 shadow-sm cursor-pointer'
+                  : 'bg-surface text-forest border-2 border-leaf/20 hover:border-leaf/40 shadow-sm cursor-pointer'
               }`}
             >
               ← Back
@@ -253,7 +257,7 @@ export default function StoryReaderPage() {
                   : 'bg-sun text-forest cursor-pointer'
               }`}
             >
-              {isLast && story ? 'Finish Story ✨' : isLast ? 'Waiting...' : 'Next Chapter →'}
+              {isLast && story ? (isBedtime ? 'Sweet Dreams \u{1F319}' : 'Finish Story \u2728') : isLast ? 'Waiting...' : 'Next Chapter \u2192'}
             </motion.button>
           </div>
         </div>

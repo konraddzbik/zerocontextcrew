@@ -52,8 +52,8 @@ export default function ChoiceCard({ question, options, selectedId, onChoose }: 
                 isSelected
                   ? 'border-sun bg-sun/20 shadow-md'
                   : selectedId
-                    ? 'border-leaf/10 bg-white/50 opacity-60'
-                    : 'border-leaf/20 bg-white hover:border-leaf/40 hover:shadow-sm cursor-pointer'
+                    ? 'border-leaf/10 bg-surface/50 opacity-60'
+                    : 'border-leaf/20 bg-surface hover:border-leaf/40 hover:shadow-sm cursor-pointer'
               }`}
             >
               <div className="flex items-center justify-between gap-3">
