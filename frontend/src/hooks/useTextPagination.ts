@@ -1,30 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type RefObject } from 'react';
 
 /**
- * Splits text into pages that fit within `maxHeight` pixels,
+ * Splits text into pages that fit within a measured container height,
  * using DOM measurement for accuracy.
  *
- * First page gets less space (title + vignette overhead).
+ * Accepts either a numeric maxHeight or a ref to the container element
+ * for dynamic measurement.
+ *
+ * First page gets less space (title + vignette + dropcap overhead).
  * Returns an array of text strings, one per page.
  */
 export function useTextPagination(
   fullText: string,
-  maxHeight: number,
+  maxHeightOrRef: number | RefObject<HTMLDivElement | null>,
   firstPageOverhead = 90,
 ): string[] {
   const [pages, setPages] = useState<string[]>([fullText]);
 
+  // Resolve height from ref or number
+  const isRef = typeof maxHeightOrRef !== 'number';
+
   useEffect(() => {
-    if (!fullText || maxHeight <= 0) {
+    if (!fullText) {
       setPages([fullText || '']);
       return;
     }
+
+    let maxHeight: number;
+    let measuredWidth: number;
+
+    if (isRef) {
+      const el = (maxHeightOrRef as RefObject<HTMLDivElement | null>).current;
+      if (!el) {
+        setPages([fullText]);
+        return;
+      }
+      maxHeight = el.clientHeight;
+      measuredWidth = el.clientWidth;
+    } else {
+      maxHeight = maxHeightOrRef as number;
+      measuredWidth = 430;
+    }
+
+    if (maxHeight <= 0) {
+      setPages([fullText]);
+      return;
+    }
+
+    // Safety margin to prevent text clipping at the bottom
+    const safetyMargin = 20;
+    maxHeight = maxHeight - safetyMargin;
 
     // Create an invisible measurer matching the story text area
     const measurer = document.createElement('div');
     measurer.style.cssText = `
       position: absolute; visibility: hidden; pointer-events: none;
-      width: 430px;
+      width: ${measuredWidth}px;
       font-family: 'Crimson Text', serif;
       font-size: 1.15rem;
       line-height: 1.85;
@@ -61,7 +92,7 @@ export function useTextPagination(
     // Filter out any empty/whitespace-only pages
     const cleaned = result.filter((p) => p.trim().length > 0);
     setPages(cleaned.length > 0 ? cleaned : [fullText]);
-  }, [fullText, maxHeight, firstPageOverhead]);
+  }, [fullText, maxHeightOrRef, firstPageOverhead, isRef]);
 
   return pages;
 }

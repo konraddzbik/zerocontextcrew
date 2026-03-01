@@ -24,36 +24,38 @@ export default function AudioPlayer({ audioUrl, chapterTitle }: AudioPlayerProps
 
   if (isMocked) {
     return (
-      <div
-        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-sky/60 border border-leaf/20"
+      <motion.div
+        className="narration-btn narration-btn--muted"
         role="region"
         aria-label={`Audio narration for ${chapterTitle} — coming soon`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
       >
-        <span className="text-xl opacity-50" aria-hidden="true">🔇</span>
-        <span className="font-body text-sm text-bark/50">
-          Narration coming soon
-        </span>
-      </div>
+        <span className="narration-btn__icon" aria-hidden="true">&#9835;</span>
+        <span className="narration-btn__label">Narration coming soon</span>
+      </motion.div>
     );
   }
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-sky border border-leaf/20"
+      className="narration-btn"
       role="region"
       aria-label={`Audio narration for ${chapterTitle}`}
     >
       {audioUrl && <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />}
       <motion.button
         onClick={toggle}
-        whileTap={{ scale: 0.9 }}
-        className="w-12 h-12 flex items-center justify-center rounded-full bg-leaf text-white text-lg hover:bg-forest transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-sun focus:ring-offset-2"
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
+        className="narration-btn__play"
         aria-label={isPlaying ? `Pause narration for ${chapterTitle}` : `Play narration for ${chapterTitle}`}
       >
-        {isPlaying ? '⏸' : '▶️'}
+        {isPlaying ? '⏸' : '▶'}
       </motion.button>
-      <span className="font-body text-sm text-forest">
-        {isPlaying ? 'Playing narration...' : 'Listen to this chapter'}
+      <span className="narration-btn__label">
+        {isPlaying ? 'Playing narration…' : 'Listen to this chapter'}
       </span>
     </div>
   );

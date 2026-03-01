@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type RefObject } from 'react';
 import PageLeft from './PageLeft';
 import PageRight from './PageRight';
 import PageRightText from './PageRightText';
@@ -20,6 +20,8 @@ interface BookSpreadProps {
   onAutoTurn: () => void;
   onFlipComplete: () => void;
   pageNumber: number;
+  hasNoIllustration?: boolean;
+  textAreaRef?: RefObject<HTMLDivElement | null>;
 }
 
 export default function BookSpread({
@@ -37,6 +39,8 @@ export default function BookSpread({
   onAutoTurn,
   onFlipComplete,
   pageNumber,
+  hasNoIllustration,
+  textAreaRef,
 }: BookSpreadProps) {
   const leftPageNum = pageNumber * 2;
   const rightPageNum = leftPageNum + 1;
@@ -74,6 +78,7 @@ export default function BookSpread({
         onTextComplete={rightTextContent ? handleLeftTextComplete : undefined}
         rightTextDone={rightTextContent ? rightDone : undefined}
         pageNumber={leftPageNum}
+        textAreaRef={textAreaRef}
       />
 
       {rightTextContent ? (
@@ -91,6 +96,7 @@ export default function BookSpread({
           altText={altText}
           chapterTitle={chapter.title.startsWith('Chapter') ? chapter.title : `Chapter ${chapter.chapterNumber}`}
           pageNumber={rightPageNum}
+          hasNoIllustration={hasNoIllustration}
         />
       )}
 

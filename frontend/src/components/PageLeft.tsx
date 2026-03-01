@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTypewriter } from '../hooks/useTypewriter';
 import { TopVignette, PageCorners } from './PageOrnaments';
@@ -18,6 +18,7 @@ interface PageLeftProps {
   onTextComplete?: () => void;
   rightTextDone?: boolean;
   pageNumber: number;
+  textAreaRef?: RefObject<HTMLDivElement | null>;
 }
 
 export default function PageLeft({
@@ -33,6 +34,7 @@ export default function PageLeft({
   onTextComplete,
   rightTextDone,
   pageNumber,
+  textAreaRef,
 }: PageLeftProps) {
   const { displayed, isDone } = useTypewriter(textContent, 50);
   const hasChoices = !!chapter.choice?.options?.length;
@@ -79,13 +81,6 @@ export default function PageLeft({
     <div className="page-left relative flex flex-col h-full p-6 md:p-8 pb-16">
       <PageCorners />
 
-      {/* Audio — small, top-right, only on first text page */}
-      {isFirstTextPage && chapter.audioUrl && (
-        <div className="absolute top-3 right-3 z-10 scale-75 origin-top-right">
-          <AudioPlayer audioUrl={chapter.audioUrl} chapterTitle={chapter.title} />
-        </div>
-      )}
-
       {/* Ornament + title — only on first text page */}
       {isFirstTextPage && (
         <>
@@ -93,11 +88,15 @@ export default function PageLeft({
           <h2 className="chapter-title-book">
             {chapter.title.startsWith('Chapter') ? chapter.title : `Chapter ${chapter.chapterNumber}: ${chapter.title}`}
           </h2>
+          {/* Audio narration — below title, full width */}
+          {chapter.audioUrl && (
+            <AudioPlayer audioUrl={chapter.audioUrl} chapterTitle={chapter.title} />
+          )}
         </>
       )}
 
       {/* Story text */}
-      <div className="story-text-book flex-1" style={{ overflow: 'hidden' }}>
+      <div ref={textAreaRef} className="story-text-book flex-1" style={{ overflow: 'hidden' }}>
         {firstLetter && <span className={dropcapClass}>{firstLetter}</span>}
         <span style={{ whiteSpace: 'pre-line' }}>{restText}</span>
         {!isDone && <span className="typewriter-cursor" />}
