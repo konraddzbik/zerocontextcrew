@@ -94,7 +94,7 @@ async def generate_character_dna_llm(
                 {"role": "user", "content": user_prompt},
             ],
             response_format={"type": "json_object"},
-            temperature=0.7,
+            temperature=0.3,
             max_tokens=500,
         )
 

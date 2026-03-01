@@ -21,11 +21,13 @@ def _init_story_state(callback_context: CallbackContext):
         callback_context.state["total_chapters"] = 3
     if "current_chapter" not in callback_context.state:
         callback_context.state["current_chapter"] = ""
+    # Reset per-iteration guard counter (used by save_chapter Guard 2)
+    callback_context.state["_chapter_guard_rejects"] = 0
 
 
 story_writer_agent = Agent(
     name="story_writer_agent",
-    model=LiteLlm(model="mistral/mistral-large-latest"),
+    model=LiteLlm(model="mistral/mistral-large-latest", temperature=0.7),
     description="Writes the next chapter of a children's story.",
     instruction="""You are a children's story writer.
 

@@ -32,8 +32,14 @@ class AudioAgent(BaseAgent):
     async def _run_async_impl(
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
-        chapter_text: str = ctx.session.state.get("current_chapter", "")
+        raw_chapter = ctx.session.state.get("current_chapter", "")
         chapter_number: int = ctx.session.state.get("chapter_number", 1)
+
+        # current_chapter may be a dict (from save_chapter) or a plain string
+        if isinstance(raw_chapter, dict):
+            chapter_text = raw_chapter.get("text", "")
+        else:
+            chapter_text = str(raw_chapter) if raw_chapter else ""
 
         if not chapter_text or not chapter_text.strip():
             yield Event(
