@@ -227,98 +227,51 @@ async def _generate_one_audio(
 
 
 async def generate_audio(tool_context: ToolContext) -> dict:
-    """Generate audio narration for all story chapters not yet narrated.
+    """Generate audio narration for the current story chapter.
 
-    Reads accumulated chapters from state["all_chapters"] and generates
-    audio for each one that does not already have an entry in
-    state["all_audio_results"].  Falls back to state["current_chapter"]
-    when all_chapters is not present.
+    Reads state["current_chapter"] — set by save_chapter after each chapter
+    write — and narrates exactly that one chapter via ElevenLabs TTS.  The
+    agent is invoked once per chapter, so there is never more than one chapter
+    to narrate per call.
+
+    Idempotent: if this chapter already has a successful entry in
+    state["all_audio_results"], returns a skipped status immediately without
+    calling the API again.
 
     Args:
         tool_context: ADK tool context for reading/writing session state.
 
     Returns:
-        dict with generation results for all chapters processed.
+        dict with the generation result for the current chapter.
     """
     state = tool_context.state
 
-    # Determine which chapters already have audio
+    # Resolve the chapter just written by story_writer_agent
+    current = state.get("current_chapter")
+    if not current:
+        return {"status": "error", "message": "No current_chapter in state."}
+
+    chapter_number: int = (
+        current.get("chapter_number", state.get("chapter_number", 1))
+        if isinstance(current, dict)
+        else state.get("chapter_number", 1)
+    )
+
+    # Idempotency: skip if already successfully narrated
     audio_history: list = state.get("all_audio_results", [])
     narrated_chapters: set[int] = {
         r["chapter"] for r in audio_history if r.get("status") == "success"
     }
+    if chapter_number in narrated_chapters:
+        return {
+            "status": "skipped",
+            "message": f"Chapter {chapter_number} already narrated.",
+            "chapter": chapter_number,
+        }
 
-    # Collect all_chapters from state (written by save_chapter)
-    all_chapters: list = state.get("all_chapters", [])
+    logger.info("Generating audio for chapter %d", chapter_number)
 
-    if all_chapters:
-        chapters_to_narrate = [
-            ch for ch in all_chapters
-            if ch.get("chapter_number", 0) not in narrated_chapters
-        ]
-    else:
-        # Fallback: use current_chapter
-        current = state.get("current_chapter")
-        if not current:
-            return {"status": "error", "message": "No chapter text found in state."}
-        chapter_num = (
-            current.get("chapter_number", state.get("chapter_number", 1))
-            if isinstance(current, dict)
-            else state.get("chapter_number", 1)
-        )
-        if chapter_num in narrated_chapters:
-            return {"status": "skipped", "message": f"Chapter {chapter_num} already narrated."}
-        chapters_to_narrate = [current]
-
-    if not chapters_to_narrate:
-        return {"status": "skipped", "message": "All chapters already narrated."}
-
-    logger.info(
-        "Generating audio for %d chapter(s): %s",
-        len(chapters_to_narrate),
-        [ch.get("chapter_number") for ch in chapters_to_narrate],
-    )
-
-    results = []
-    for chapter_data in chapters_to_narrate:
-        chapter_number = (
-            chapter_data.get("chapter_number", state.get("chapter_number", 1))
-            if isinstance(chapter_data, dict)
-            else state.get("chapter_number", 1)
-        )
-        result = await _generate_one_audio(chapter_data, chapter_number, tool_context)
-        results.append(result)
-
-    total = len(results)
-    successful = sum(1 for r in results if r["status"] == "success")
-    failed = total - successful
-
-    # Build a human-readable summary for the LLM to relay to the user
-    if successful > 0:
-        success_details = [
-            f"Chapter {r['chapter']}: {r['audio_url']} "
-            f"(~{r.get('duration_seconds_estimate', '?')}s, {r.get('file_size_kb', '?')}KB)"
-            for r in results if r["status"] == "success"
-        ]
-        summary = (
-            f"Audio narration ready for {successful} chapter(s):\n"
-            + "\n".join(success_details)
-        )
-        if failed:
-            summary += f"\n{failed} chapter(s) failed."
-        overall_status = "success"
-    else:
-        summary = f"Audio generation failed for all {total} chapter(s)."
-        overall_status = "error"
-
-    return {
-        "status": overall_status,
-        "chapters_narrated": total,
-        "successful": successful,
-        "failed": failed,
-        "results": results,
-        "message": summary,
-    }
+    return await _generate_one_audio(current, chapter_number, tool_context)
 
 
 def _accumulate_result(state: Any, result: dict) -> None:

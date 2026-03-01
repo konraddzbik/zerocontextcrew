@@ -399,26 +399,21 @@ class TestGenerateAudioTool:
                 tool_context=mock_tool_context,
             )
 
-            # Verify top-level wrapper
+            # Verify flat result — generate_audio returns one chapter's result directly
             assert result["status"] == "success", (
                 f"Expected success, got: {result}"
             )
-            assert result["successful"] == 1
-            assert result["chapters_narrated"] == 1
-
-            # Verify per-chapter result
-            chapter_result = result["results"][0]
-            assert "audio_url" in chapter_result, f"Missing audio_url: {chapter_result}"
-            assert "audio_file" in chapter_result, f"Missing audio_file: {chapter_result}"
-            assert "filename" in chapter_result, f"Missing filename: {chapter_result}"
-            assert chapter_result["chapter"] == 1
+            assert "audio_url" in result, f"Missing audio_url: {result}"
+            assert "audio_file" in result, f"Missing audio_file: {result}"
+            assert "filename" in result, f"Missing filename: {result}"
+            assert result["chapter"] == 1
 
             # Verify URL format — background server serves at root
-            assert chapter_result["audio_url"].startswith("http://localhost:8001/")
-            assert chapter_result["audio_url"].endswith(".mp3")
+            assert result["audio_url"].startswith("http://localhost:8001/")
+            assert result["audio_url"].endswith(".mp3")
 
             # Verify file was saved to the REAL persistent directory
-            saved_path = Path(chapter_result["audio_file"])
+            saved_path = Path(result["audio_file"])
             assert saved_path.exists(), (
                 f"Audio file not found at {saved_path}"
             )
@@ -459,20 +454,18 @@ class TestGenerateAudioTool:
             audio_tools.APP_BASE_URL = f"http://localhost:{audio_tools.AUDIO_SERVER_PORT}"
 
             owl_text = "A little owl hooted softly in the moonlight."
-            mock_tool_context.state["all_chapters"] = [
-                {"text": owl_text, "chapter_number": 2, "emotion": "calm"}
-            ]
+            owl_chapter = {"text": owl_text, "chapter_number": 2, "emotion": "calm"}
+            mock_tool_context.state["current_chapter"] = owl_chapter
             mock_tool_context.state["all_audio_results"] = []  # reset so chapter 2 is narrated
             result = await audio_tools.generate_audio(
                 tool_context=mock_tool_context,
             )
 
             assert result["status"] == "success", f"Tool failed: {result}"
-            chapter_result = result["results"][0]
 
             # The background server should already be running (started by generate_audio)
             time.sleep(0.5)
-            resp = urllib.request.urlopen(chapter_result["audio_url"])
+            resp = urllib.request.urlopen(result["audio_url"])
             data = resp.read()
 
             assert resp.status == 200
@@ -492,15 +485,15 @@ class TestGenerateAudioTool:
         try:
             audio_tools.ELEVENLABS_API_KEY = "sk_test_fake_key"
 
-            # Empty text via all_chapters path (primary code path)
-            mock_tool_context.state["all_chapters"] = [{"text": "", "chapter_number": 1}]
+            # Empty text — set current_chapter directly (the path generate_audio reads)
+            mock_tool_context.state["current_chapter"] = {"text": "", "chapter_number": 1}
             mock_tool_context.state["all_audio_results"] = []
             result = await audio_tools.generate_audio(
                 tool_context=mock_tool_context,
             )
 
             assert result["status"] == "error"
-            assert result["results"][0]["error_type"] == "validation"
+            assert result["error_type"] == "validation"
 
         finally:
             audio_tools.ELEVENLABS_API_KEY = original_key
@@ -519,7 +512,7 @@ class TestGenerateAudioTool:
             )
 
             assert result["status"] == "error"
-            assert result["results"][0]["error_type"] == "configuration"
+            assert result["error_type"] == "configuration"
 
         finally:
             audio_tools.ELEVENLABS_API_KEY = original_key
@@ -540,7 +533,7 @@ class TestGenerateAudioTool:
             )
 
             assert result["status"] == "error"
-            assert result["results"][0]["error_type"] == "configuration"
+            assert result["error_type"] == "configuration"
 
         finally:
             audio_tools.ELEVENLABS_API_KEY = original_key
@@ -559,7 +552,7 @@ class TestGenerateAudioTool:
             )
 
             assert result["status"] == "error"
-            assert result["results"][0]["error_type"] in ("api_error", "unexpected")
+            assert result["error_type"] in ("api_error", "unexpected")
 
         finally:
             audio_tools.ELEVENLABS_API_KEY = original_key
@@ -600,13 +593,11 @@ class TestEndToEnd:
             )
 
             assert result["status"] == "success", f"Tool failed: {result}"
-            assert result["successful"] == 1
-            chapter_result = result["results"][0]
-            assert "audio_url" in chapter_result
-            assert "filename" in chapter_result
+            assert "audio_url" in result
+            assert "filename" in result
 
             # Step 2: Verify file on disk (persistent)
-            filepath = audio_tools.AUDIO_OUTPUT_DIR / chapter_result["filename"]
+            filepath = audio_tools.AUDIO_OUTPUT_DIR / result["filename"]
             assert filepath.exists(), f"File not on disk: {filepath}"
 
             saved_bytes = filepath.read_bytes()
@@ -614,11 +605,11 @@ class TestEndToEnd:
 
             # Step 3: Fetch via the background HTTP server
             time.sleep(0.5)
-            resp = urllib.request.urlopen(chapter_result["audio_url"])
+            resp = urllib.request.urlopen(result["audio_url"])
             fetched_bytes = resp.read()
 
             assert resp.status == 200, (
-                f"HTTP {resp.status} for {chapter_result['audio_url']}"
+                f"HTTP {resp.status} for {result['audio_url']}"
             )
             assert len(fetched_bytes) == len(saved_bytes)
             assert fetched_bytes == saved_bytes
